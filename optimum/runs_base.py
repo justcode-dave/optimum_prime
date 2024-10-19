@@ -1,30 +1,65 @@
-import os
-import subprocess
-from contextlib import contextmanager
-from time import perf_counter_ns
-from typing import Set
+"""
+RunsBase Module
 
-import numpy as np
-import optuna
-import torch
-import transformers
-from datasets import Dataset
-from tqdm import trange
+This module serves as the foundational implementation for handling model runs in the Promise Optimizer project. 
+It provides base classes and methods required to manage and execute optimization runs across various algorithms 
+and libraries integrated within the Promise Optimizer. This base class is designed for flexibility and extensibility, 
+allowing developers to define custom optimization strategies while leveraging standardized workflows.
 
-from . import version as optimum_version
-from .utils.preprocessing import (
+The module supports:
+- Calibration for quantization using a dataset.
+- Running model inference and evaluation benchmarks.
+- Measuring latency and throughput of models.
+
+Classes:
+    - Calibrator: Base class to handle the model calibration process for quantization.
+    - Run: Manages and executes model runs, including benchmarking and evaluation.
+    - TimeBenchmark: Tracks latency and throughput for models.
+
+Functions:
+    - get_autoclass_name(task): Returns the appropriate autoclass name based on the task.
+    - ns_to_ms(ns_time): Converts nanoseconds to milliseconds.
+"""
+
+# Importing necessary modules and libraries for various tasks
+
+import os  # For handling environment variables and file system operations
+import subprocess  # For executing shell commands to retrieve system information
+from contextlib import contextmanager  # For implementing context management (e.g., benchmarking time)
+from time import perf_counter_ns  # High-resolution timer for performance tracking
+from typing import Set  # Type hinting for Sets in function arguments
+
+import numpy as np  # Numerical operations, specifically for array processing
+import optuna  # Optuna for hyperparameter tuning and optimization
+import torch  # PyTorch for deep learning model management
+import transformers  # Hugging Face transformers library for model handling
+from datasets import Dataset  # Handling datasets for calibration and evaluation
+from tqdm import trange  # Progress bar for iterations during evaluation
+
+# Importing custom modules from the project
+from . import version as optimum_version  # Project version tracking for reproducibility
+from .utils.preprocessing import (  # Utilities for dataset preprocessing across multiple tasks
     ImageClassificationProcessing,
     QuestionAnsweringProcessing,
     TextClassificationProcessing,
     TokenClassificationProcessing,
 )
-from .utils.runs import RunConfig, cpu_info_command
+from .utils.runs import RunConfig, cpu_info_command  # Utility for run configuration and CPU info command
 
-
+# Disable tokenizers parallelism to avoid concurrency issues during multi-threading
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 def get_autoclass_name(task):
+    """
+    Get the autoclass name based on the task.
+
+    Args:
+        task (str): Task name (e.g., 'text-classification', 'audio-classification').
+
+    Returns:
+        str: Autoclass name (e.g., 'sequence-classification').
+    """
     if task in ["text-classification", "audio-classification"]:
         autoclass_name = "sequence-classification"
     else:
@@ -33,9 +68,19 @@ def get_autoclass_name(task):
 
 
 class Calibrator:
-    def __init__(
-        self, calibration_dataset: Dataset, quantizer, model_path, qconfig, calibration_params, node_exclusion
-    ):
+    """
+    Class responsible for handling model calibration for quantization.
+
+    Args:
+        calibration_dataset (Dataset): The dataset used for calibration.
+        quantizer: The quantization algorithm or framework used.
+        model_path (str): Path to the model to be calibrated.
+        qconfig: Configuration for quantization.
+        calibration_params: Parameters for calibration.
+        node_exclusion: Nodes to exclude from quantization.
+    """
+
+    def __init__(self, calibration_dataset: Dataset, quantizer, model_path, qconfig, calibration_params, node_exclusion):
         self.calibration_dataset = calibration_dataset
         self.quantizer = quantizer
         self.model_path = model_path
@@ -44,10 +89,28 @@ class Calibrator:
         self.node_exclusion = node_exclusion
 
     def fit(self):
+        """
+        Perform the calibration process. Must be implemented by subclasses.
+
+        Raises:
+            NotImplementedError: If the method is not implemented.
+        """
         raise NotImplementedError()
 
 
 class Run:
+    """
+    Class to manage and execute model runs including inference and evaluation.
+
+    Args:
+        run_config (dict): Parameters for running the optimization and evaluation process. Validated by RunConfig.
+
+    Attributes:
+        task (str): Task type for the run.
+        study (optuna.Study): Optuna study for parameter optimization.
+        return_body (dict): Dictionary to store results and metadata of the run.
+    """
+
     def __init__(self, run_config: dict):
         """Initialize the Run class holding methods to perform inference and evaluation given a config.
 
@@ -56,7 +119,7 @@ class Run:
         Args:
             run_config (dict): Parameters to use for the run. See [`~utils.runs.RunConfig`] for the expected keys.
         """
-        RunConfig(**run_config)  # validate the data (useful if used as standalone)
+        RunConfig(**run_config)  # Validate the data (useful if used as standalone)
 
         self.task = run_config["task"]
 
@@ -94,7 +157,7 @@ class Run:
             "calibration": run_config["calibration"],
             "framework": run_config["framework"],
             "framework_args": run_config["framework_args"],
-            "hardware": cpu_info,  # is this ok?
+            "hardware": cpu_info,  # Store CPU info
             "versions": {
                 "transformers": transformers.__version__,
                 "optimum": optimum_version.__version__,
@@ -111,10 +174,10 @@ class Run:
     def launch(self):
         """Launch inference to compare metrics between the original and optimized model.
 
-        These metrics are latency, throughput, model size, and user provided metrics.
+        These metrics are latency, throughput, model size, and user-provided metrics.
 
         Returns:
-            `dict`: Finalized run data with metrics stored in the "evaluation" key.
+            dict: Finalized run data with metrics stored in the 'evaluation' key.
         """
         try:
             self.study.optimize(self._launch_time)
@@ -128,23 +191,25 @@ class Run:
     def _launch_time(self, trial):
         """Optuna objective function to measure latency/throughput.
 
-        Populate the `["evaluation"]["time"]` list of the run for various batch size and input length.
+        Populates the `["evaluation"]["time"]` list of the run for various batch sizes and input lengths.
+
+        Args:
+            trial: Optuna trial object for parameter tuning.
 
         Returns:
-            Dummy data.
+            dict: Dummy data (to be customized by subclass).
         """
         raise NotImplementedError()
 
     def launch_eval(self):
-        """
-        Run evaluation on the original and optimized model.
+        """Run evaluation on the original and optimized model.
 
-        Populate the `["evaluation"]["others"]` subdictionary of the run.
+        Populates the `["evaluation"]["others"]` subdictionary of the run.
         """
         raise NotImplementedError()
 
     def load_datasets(self):
-        """Load evaluation dataset, and if needed, calibration dataset for static quantization."""
+        """Load evaluation dataset and calibration dataset (if needed for static quantization)."""
         datasets_dict = self.task_processor.load_datasets()
 
         self._eval_dataset = datasets_dict["eval"]
@@ -152,28 +217,41 @@ class Run:
             self._calibration_dataset = datasets_dict["calibration"]
 
     def get_calibration_dataset(self):
-        """Get calibration dataset. The dataset needs to be loaded first with [`~optimum.runs_base.Run.load_datasets`].
+        """Get the calibration dataset for static quantization.
+
+        The dataset needs to be loaded first with [`~optimum.runs_base.Run.load_datasets`].
 
         Returns:
-            `datasets.Dataset`: Calibration dataset.
+            Dataset: Calibration dataset.
+
+        Raises:
+            KeyError: If no calibration dataset is loaded.
         """
         if not hasattr(self, "_calibration_dataset"):
             raise KeyError("No calibration dataset defined for this run.")
         return self._calibration_dataset
 
     def get_eval_dataset(self):
-        """
-        Get evaluation dataset.  The dataset needs to be loaded first with [`~optimum.runs_base.Run.load_datasets`].
+        """Get the evaluation dataset.
+
+        The dataset needs to be loaded first with [`~optimum.runs_base.Run.load_datasets`].
 
         Returns:
-            `datasets.Dataset`: Evaluation dataset.
+            Dataset: Evaluation dataset.
+
+        Raises:
+            KeyError: If no evaluation dataset is loaded.
         """
         if not hasattr(self, "_eval_dataset"):
             raise KeyError("No evaluation dataset defined for this run.")
         return self._eval_dataset
 
     def finalize(self):
-        """Cleanup intermediary files."""
+        """Clean up intermediary files and resources.
+
+        Raises:
+            NotImplementedError: If the method is not implemented.
+        """
         raise NotImplementedError()
 
 
@@ -182,21 +260,48 @@ NS_TO_MS_SCALE = 1e6
 
 
 def ns_to_ms(ns_time):
+    """Convert time from nanoseconds to milliseconds.
+
+    Args:
+        ns_time (int): Time in nanoseconds.
+
+    Returns:
+        float: Time in milliseconds.
+    """
     return ns_time / NS_TO_MS_SCALE
 
 
 class TimeBenchmark:
-    def __init__(
-        self, model, batch_size: int, input_length: int, model_input_names: Set[str], warmup_runs: int, duration: float
-    ):
+    """
+    Benchmark class to track latency and throughput for models.
+
+    This class handles the benchmarking of models by tracking their latency and throughput 
+    over multiple forward passes. It supports warmup runs and can generate dummy inputs 
+    for specific input types such as 'input_ids', 'attention_mask', 'token_type_ids', and 'pixel_values'.
+
+    Args:
+        model (torch.nn.Module): The model to benchmark.
+        batch_size (int): The batch size for inputs.
+        input_length (int): The input length (sequence length for text or image size).
+        model_input_names (Set[str]): The set of input names used by the model.
+        warmup_runs (int): The number of warmup runs before actual benchmarking.
+        duration (float): The total duration (in seconds) to run the benchmark.
+
+    Attributes:
+        latencies (list): Stores the latencies (in nanoseconds) for each forward pass.
+        throughput (float): Tracks the throughput of the model (forward passes per second).
+    """
+
+    def __init__(self, model, batch_size: int, input_length: int, model_input_names: Set[str], warmup_runs: int, duration: float):
         self.batch_size = batch_size
         self.input_length = input_length
         self.model = model
 
-        # in seconds
+        # Duration for warmup runs (in seconds)
         self.warmup_runs = warmup_runs
         self.benchmark_duration = duration
 
+        # To store latencies and throughput
         self.latencies = []
         self.throughput = float("-inf")
 
@@ -204,24 +309,50 @@ class TimeBenchmark:
 
     @property
     def num_runs(self) -> int:
+        """
+        Get the number of forward runs performed during the benchmark.
+
+        Returns:
+            int: Number of forward passes tracked.
+        """
         return len(self.latencies)
 
     @contextmanager
     def track(self):
+        """
+        Context manager to track the duration of a forward pass and store the latency.
+
+        This method uses a high-resolution timer to track the time taken by the model 
+        to perform a forward pass. The result is appended to the latencies list.
+        """
         start = perf_counter_ns()
         yield
         end = perf_counter_ns()
 
         # Append the time to the buffer
         self.latencies.append(end - start)
-
         print(f"Tracked function took: {(end - start)}ns ({(end - start) / 1e6:.3f}ms)")
 
     def finalize(self, duration_ns: int):
+        """
+        Finalize the benchmarking by calculating throughput.
+
+        Args:
+            duration_ns (int): Total duration of the benchmarking (in nanoseconds).
+        """
         self.throughput = round((len(self.latencies) / duration_ns) * SEC_TO_NS_SCALE, 2)
 
-    def to_dict(self):
-        # Compute stats, beware latencies are stored as ms
+    def to_dict(self) -> dict:
+        """
+        Compute and return benchmark statistics as a dictionary.
+
+        The statistics include the number of forward passes, throughput, 
+        and various latency percentiles (50th, 90th, 95th, 99th, 99.9th).
+
+        Returns:
+            dict: Dictionary containing benchmark statistics.
+        """
+        # Compute statistics for latencies (converted to milliseconds)
         benchmarks_stats = {
             "nb_forwards": len(self.latencies),
             "throughput": self.throughput,
@@ -236,10 +367,23 @@ class TimeBenchmark:
 
         return benchmarks_stats
 
-    def execute(self):
+    def execute(self) -> dict:
+        """
+        Execute the benchmark by running the model with dummy inputs.
+
+        This method generates dummy inputs based on the model input names and tracks 
+        the performance over the specified duration or number of runs. Warmup runs are 
+        executed first to ensure accurate measurement.
+
+        Returns:
+            dict: Dictionary containing benchmark statistics.
+        """
         inputs = {}
 
+        # Set of recognized model inputs
         checked_inputs = {"input_ids", "attention_mask", "token_type_ids", "pixel_values"}
+
+        # Generate dummy inputs based on the model's input names
         if "input_ids" in self.model_input_names:
             inputs["input_ids"] = torch.randint(high=1000, size=(self.batch_size, self.input_length))
         if "attention_mask" in self.model_input_names:
@@ -247,31 +391,34 @@ class TimeBenchmark:
         if "token_type_ids" in self.model_input_names:
             inputs["token_type_ids"] = torch.ones(self.batch_size, self.input_length, dtype=torch.int64)
         if "pixel_values" in self.model_input_names:
-            # TODO support grayscale?
+            # Handle RGB images (default). TODO: add grayscale support if needed.
             inputs["pixel_values"] = torch.rand(
                 self.batch_size, 3, self.model.config.image_size, self.model.config.image_size, dtype=torch.float32
             )
 
+        # Check if any input in the model_input_names is not handled
         if np.any([k not in checked_inputs for k in self.model_input_names]):
             raise NotImplementedError(
-                f"At least an input in {self.model_input_names} has no dummy generation for time benchmark."
+                f"At least one input in {self.model_input_names} is not supported for dummy input generation."
             )
 
-        # Warmup
+        # Warmup phase to ensure accurate measurements
         for _ in trange(self.warmup_runs, desc="Warming up"):
             self.model.forward(**inputs)
 
+        # Execute benchmark for the specified duration
         if self.benchmark_duration != 0:
             benchmark_duration_ns = self.benchmark_duration * SEC_TO_NS_SCALE
-            print(f"Running time tracking in {self.benchmark_duration:.1f}s.")
+            print(f"Running time tracking for {self.benchmark_duration:.1f}s.")
             while sum(self.latencies) < benchmark_duration_ns:
-                # TODO not trak GPU/CPU <--> numpy/torch, need to change the implementation of forward
+                # Track the forward pass duration
                 with self.track():
                     self.model.forward(**inputs)
 
             self.finalize(benchmark_duration_ns)
-
             return self.to_dict()
+
+        # Return default stats if no benchmarking is performed
         else:
             benchmarks_stats = {
                 "nb_forwards": 0,
@@ -281,6 +428,7 @@ class TimeBenchmark:
             return benchmarks_stats
 
 
+# Map tasks to the appropriate processing classes
 task_processing_map = {
     "text-classification": TextClassificationProcessing,
     "token-classification": TokenClassificationProcessing,

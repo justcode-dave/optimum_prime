@@ -1,81 +1,95 @@
 #!/usr/bin/env python
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
-import importlib
-import logging
-import sys
+"""
+Subpackages Loader for Promise Optimizer
 
+This module is responsible for dynamically loading subpackages inside the Promise Optimizer project, 
+specifically for loading modules in namespace packages like `optimum`. The main purpose of this file 
+is to identify and load subpackages that provide additional backend functionality such as ONNX Runtime, 
+register their commands, and make them available for use within the broader framework.
 
+The module also supports loading custom submodules from other libraries within the same namespace. 
+It ensures flexibility and modularity by allowing different subpackages to register commands dynamically.
+
+Functions:
+    - load_namespace_modules(namespace: str, module: str): Loads a specific module from all subpackages in a namespace.
+    - load_subpackages(): Automatically loads the required subpackages for optimum integration.
+
+Dependencies:
+    - importlib: For dynamic importing of modules.
+    - importlib_metadata: For extracting metadata from installed distributions.
+    - logging: To log the loading process and any errors encountered.
+    - sys: To check the Python version and manage loaded modules.
+"""
+
+import importlib  # For dynamically importing modules
+import logging  # For logging information and errors
+import sys  # To check the Python version and manage system modules
+
+# Use different metadata imports depending on the Python version
 if sys.version_info >= (3, 8):
-    from importlib import metadata as importlib_metadata
+    from importlib import metadata as importlib_metadata  # Python 3.8+ metadata handling
 else:
-    import importlib_metadata
-from importlib.util import find_spec, module_from_spec
+    import importlib_metadata  # Legacy metadata handling for Python < 3.8
 
-from .utils import is_onnxruntime_available
+from importlib.util import find_spec, module_from_spec  # Tools for finding and loading module specs
 
+from .utils import is_onnxruntime_available  # Check if ONNX Runtime is available
 
+# Set up logging
 logger = logging.getLogger(__name__)
 
-
 def load_namespace_modules(namespace: str, module: str):
-    """Load modules with a specific name inside a namespace
+    """
+    Load all modules with a specific name inside a namespace package.
 
-    This method operates on namespace packages:
-    https://packaging.python.org/en/latest/guides/packaging-namespace-packages/
-
-    For each package inside the specified `namespace`, it looks for the specified `module` and loads it.
+    This function goes through each installed distribution in the specified `namespace` and tries to load
+    a module with the provided `module` name inside that namespace package. It ensures that submodules 
+    are dynamically loaded if they are not already present in `sys.modules`.
 
     Args:
-        namespace (`str`):
-            The namespace containing modules to be loaded.
-        module (`str`):
-            The name of the module to load in each namespace package.
+        namespace (str): The namespace containing packages that need to be loaded.
+        module (str): The name of the module to load inside each package in the namespace.
+
+    Example:
+        load_namespace_modules("optimum", "subpackage")
     """
-    for dist in importlib_metadata.distributions():
+    for dist in importlib_metadata.distributions():  # Iterate over all installed distributions
         dist_name = dist.metadata["Name"]
         if not dist_name.startswith(f"{namespace}-"):
-            continue
-        package_import_name = dist_name.replace("-", ".")
-        module_import_name = f"{package_import_name}.{module}"
+            continue  # Skip distributions that are not part of the namespace
+
+        package_import_name = dist_name.replace("-", ".")  # Replace '-' with '.' for proper import path
+        module_import_name = f"{package_import_name}.{module}"  # Create full module path
         if module_import_name in sys.modules:
-            # Module already loaded
-            continue
-        backend_spec = find_spec(module_import_name)
+            continue  # Skip if the module is already loaded
+
+        backend_spec = find_spec(module_import_name)  # Find the module specification
         if backend_spec is None:
-            continue
+            continue  # Skip if no module spec is found
+
         try:
-            imported_module = module_from_spec(backend_spec)
-            sys.modules[module_import_name] = imported_module
-            backend_spec.loader.exec_module(imported_module)
+            imported_module = module_from_spec(backend_spec)  # Load the module from spec
+            sys.modules[module_import_name] = imported_module  # Register the module in sys.modules
+            backend_spec.loader.exec_module(imported_module)  # Execute the module code
             logger.debug(f"Successfully loaded {module_import_name}")
         except Exception as e:
-            logger.error(f"An exception occured while loading {module_import_name}: {e}.")
-
+            logger.error(f"An exception occurred while loading {module_import_name}: {e}")
 
 def load_subpackages():
-    """Load optimum subpackages
-
-    This method goes through packages inside the `optimum` namespace and loads the `subpackage` module if it exists.
-
-    This module is then in charge of registering the subpackage commands.
     """
-    SUBPACKAGE_LOADER = "subpackage"
-    load_namespace_modules("optimum", SUBPACKAGE_LOADER)
+    Load Promise Optimizer subpackages.
 
-    # Load subpackages from internal modules not explicitly defined as namespace packages
+    This function automatically loads all subpackages inside the `optimum` namespace, specifically the `subpackage` 
+    module for each subpackage. It ensures that additional functionality provided by the subpackages, such as 
+    ONNX Runtime support, is made available. It also registers subpackage commands dynamically.
+
+    If ONNX Runtime is available, it also loads the `optimum.onnxruntime` subpackage.
+    """
+    SUBPACKAGE_LOADER = "subpackage"  # Define the name of the subpackage loader module
+    load_namespace_modules("optimum", SUBPACKAGE_LOADER)  # Load subpackages inside the optimum namespace
+
+    # Check for internal modules and load ONNX Runtime subpackage if available
     loader_name = "." + SUBPACKAGE_LOADER
     if is_onnxruntime_available():
-        importlib.import_module(loader_name, package="optimum.onnxruntime")
+        importlib.import_module(loader_name, package="optimum.onnxruntime")  # Load ONNX Runtime-specific subpackage

@@ -1,15 +1,17 @@
-#  Copyright 2021 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+"""
+Version Information for Promise Optimizer
 
-__version__ = "1.24.0.dev0"
+This module contains the version information for the Promise Optimizer project. 
+It is used to track the current version of the package, ensuring consistency and compatibility across different components.
+
+The `__version__` variable follows semantic versioning, with the version format:
+    <major>.<minor>.<patch>.<additional>
+
+This versioning helps users and developers identify and maintain compatibility between different versions of the Promise Optimizer library.
+
+Attributes:
+    __version__ (str): The current version of the Promise Optimizer package.
+"""
+
+# Define the current version of the package
+__version__ = "0.1.0.dev0"

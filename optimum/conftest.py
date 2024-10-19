@@ -1,41 +1,64 @@
-# Copyright 2020 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+Conftest Module for Promise Optimizer Tests
 
-# tests directory-specific settings - this file is run automatically
-# by pytest before any tests are run
+This module contains directory-specific settings for the test suite of Promise Optimizer. 
+It is automatically executed by pytest before any tests are run. The primary goal is to 
+configure the test environment, modify the sys path for multi-repository setups, and 
+customize doctest behavior for test output validation.
 
-import doctest
-import sys
-from os.path import abspath, dirname, join
+Key functionalities:
+- Modifies `sys.path` to ensure tests can run across multiple checkouts of the repository.
+- Registers a custom option flag for doctest (`IGNORE_RESULT`) to ignore specific output checks.
+- Implements a `CustomOutputChecker` class that overrides doctest's default output checker 
+  behavior to allow ignoring certain results during doctest runs.
+"""
 
+import doctest  # For running and customizing doctest behavior
+import sys  # For modifying the system path
+from os.path import abspath, dirname, join  # For handling file paths
 
-# allow having multiple repository checkouts and not needing to remember to rerun
-# 'pip install -e .[dev]' when switching between checkouts and running tests.
+# Modify sys.path to prioritize the current repository's "src" folder, allowing
+# tests to run across multiple checkouts without needing to reinstall dependencies.
 git_repo_path = abspath(join(dirname(__file__), "src"))
 sys.path.insert(1, git_repo_path)
 
-# Doctest custom flag to ignore output.
+# Custom doctest flag for ignoring specific output in tests.
 IGNORE_RESULT = doctest.register_optionflag("IGNORE_RESULT")
 
+# Inherit the default OutputChecker from doctest
 OutputChecker = doctest.OutputChecker
 
 
 class CustomOutputChecker(OutputChecker):
+    """
+    Custom OutputChecker for doctests.
+
+    This class overrides the default `check_output` method of doctest's `OutputChecker`.
+    It allows test cases marked with the `IGNORE_RESULT` flag to bypass result checking,
+    which is useful for cases where the output is expected to vary but should not affect
+    the test result.
+
+    Methods:
+        - check_output: Overrides default behavior to check the IGNORE_RESULT flag.
+    """
     def check_output(self, want, got, optionflags):
+        """
+        Checks whether the test output matches the expected output.
+
+        Args:
+            want (str): The expected output in the doctest.
+            got (str): The actual output produced by the test.
+            optionflags (int): The option flags for doctest, including custom flags.
+
+        Returns:
+            bool: True if the output matches or if IGNORE_RESULT is set, False otherwise.
+        """
+        # Skip output comparison if IGNORE_RESULT is set
         if IGNORE_RESULT & optionflags:
             return True
+        # Otherwise, use the default output checking behavior
         return OutputChecker.check_output(self, want, got, optionflags)
 
 
+# Override doctest's OutputChecker with the custom checker.
 doctest.OutputChecker = CustomOutputChecker

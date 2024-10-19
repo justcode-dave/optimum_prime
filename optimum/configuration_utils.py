@@ -1,35 +1,38 @@
 # coding=utf-8
-#  Copyright 2021 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-""" Configuration base class. """
+"""
+Configuration Utilities for Promise Optimizer
 
-import copy
-import json
-import os
-import re
-import warnings
-from typing import Any, Dict, List, Tuple, Union
+This module defines the base configuration class (`BaseConfig`) used to handle model configuration files
+in the Promise Optimizer project. The `BaseConfig` class extends Hugging Face's `PretrainedConfig` class
+but provides additional functionalities and customization for saving, loading, and managing configurations,
+particularly with version compatibility checks for the Transformers library.
 
-from packaging import version
-from transformers import PretrainedConfig
-from transformers import __version__ as transformers_version_str
+Key functionalities:
+- Compatibility with different versions of Hugging Face Transformers (handling version threshold).
+- Support for saving configuration files to a directory and optionally pushing them to the Hugging Face Hub.
+- Custom regular expressions for matching and managing configuration files.
+- Handling of both old and new versions of the Transformers library (below and above version 4.22).
 
-from .utils import logging
-from .version import __version__
+Classes:
+    - BaseConfig: Extends `PretrainedConfig` to handle custom configurations and saving/loading processes.
 
+"""
 
-# TODO: remove once transformers release version is way above 4.22.
+import copy  # For deep copying of dictionaries/objects
+import json  # For saving/loading configurations in JSON format
+import os  # File system operations (e.g., creating directories, saving files)
+import re  # Regular expressions for file matching and version checks
+import warnings  # Issuing deprecation warnings
+from typing import Any, Dict, List, Tuple, Union  # Type hinting utilities
+
+from packaging import version  # For version parsing and comparison
+from transformers import PretrainedConfig  # Hugging Face's base class for configuration management
+from transformers import __version__ as transformers_version_str  # Get the version of the installed Transformers library
+
+from .utils import logging  # Custom logging for Promise Optimizer
+from .version import __version__  # Version of Promise Optimizer for comparison
+
+# Check the Transformers library version and set a compatibility threshold (4.22)
 _transformers_version = version.parse(transformers_version_str)
 _transformers_version_threshold = (4, 22)
 _transformers_version_is_below_threshold = (
@@ -37,95 +40,103 @@ _transformers_version_is_below_threshold = (
     _transformers_version.minor,
 ) < _transformers_version_threshold
 
+# Import different utilities based on the Transformers version
 if _transformers_version_is_below_threshold:
-    from transformers.utils import cached_path, hf_bucket_url
+    from transformers.utils import cached_path, hf_bucket_url  # Pre-4.22 utilities
 else:
-    from transformers.dynamic_module_utils import custom_object_save
-    from transformers.utils import cached_file, download_url, extract_commit_hash, is_remote_url
+    from transformers.dynamic_module_utils import custom_object_save  # Post-4.22 utility
+    from transformers.utils import cached_file, download_url, extract_commit_hash, is_remote_url  # Newer utilities
 
-
+# Set up a logger for this module
 logger = logging.get_logger(__name__)
-
 
 class BaseConfig(PretrainedConfig):
     """
-    Base class for configuration classes that need to respect the same API than PretrainedConfig but with a different
-    configuration file name.
+    Base class for configuration classes in Promise Optimizer that extend `PretrainedConfig` but use a different
+    configuration file naming convention. This class supports both old and new versions of the Hugging Face Transformers
+    library and includes custom behavior for saving and managing configuration files.
+
+    Attributes:
+        CONFIG_NAME (str): The name of the primary configuration file (default: 'config.json').
+        FULL_CONFIGURATION_FILE (str): Full file name of the configuration file (default: 'config.json').
+
+    Methods:
+        - save_pretrained: Saves the configuration to a directory and optionally pushes it to the Hugging Face Hub.
+        - _re_configuration_file: Returns a regular expression pattern for matching configuration files.
     """
 
-    CONFIG_NAME = "config.json"
-    FULL_CONFIGURATION_FILE = "config.json"
+    CONFIG_NAME = "config.json"  # Default name for configuration files
+    FULL_CONFIGURATION_FILE = "config.json"  # Full name for configuration files
 
     @classmethod
     def _re_configuration_file(cls):
+        """
+        Generates a regular expression for matching configuration file names based on the class's
+        `FULL_CONFIGURATION_FILE` attribute.
+
+        Returns:
+            re.Pattern: A compiled regular expression pattern that matches configuration file names.
+        """
         return re.compile(rf"{cls.FULL_CONFIGURATION_FILE.split('.')[0]}(.*)\.json")
 
-    # Adapted from transformers.configuration_utils.PretrainedConfig.save_pretrained
     def save_pretrained(self, save_directory: Union[str, os.PathLike], push_to_hub: bool = False, **kwargs):
         """
-        Save a configuration object to the directory `save_directory`, so that it can be re-loaded using the
-        [`~PretrainedConfig.from_pretrained`] class method.
+        Save the current configuration to the directory `save_directory`, ensuring that it can be reloaded
+        later using the `from_pretrained` class method.
 
         Args:
-            save_directory (`str` or `os.PathLike`):
-                Directory where the configuration JSON file will be saved (will be created if it does not exist).
-            push_to_hub (`bool`, *optional*, defaults to `False`):
-                Whether or not to push your model to the Hugging Face model hub after saving it. You can specify the
-                repository you want to push to with `repo_id` (will default to the name of `save_directory` in your
-                namespace).
-            kwargs:
-                Additional key word arguments passed along to the [`~utils.PushToHubMixin.push_to_hub`] method.
+            save_directory (`str` or `os.PathLike`): The directory where the configuration JSON file will be saved.
+                The directory will be created if it does not exist.
+            push_to_hub (`bool`, optional): Whether to push the configuration to the Hugging Face Model Hub. Defaults to `False`.
+            kwargs: Additional arguments for the Hugging Face Hub push (e.g., commit message).
+
+        Raises:
+            AssertionError: If the provided `save_directory` is a file, rather than a directory.
         """
         if os.path.isfile(save_directory):
-            raise AssertionError(f"Provided path ({save_directory}) should be a directory, not a file")
+            raise AssertionError(f"Provided path ({save_directory}) should be a directory, not a file.")
 
-        # TODO: remove conditon once transformers release version is way above 4.22.
+        # Create the directory if it doesn't exist (for transformers version >= 4.22)
         if not _transformers_version_is_below_threshold:
             os.makedirs(save_directory, exist_ok=True)
 
+        # Handle pushing to the Hugging Face Model Hub, if enabled
         if push_to_hub:
             commit_message = kwargs.pop("commit_message", None)
-            # TODO: remove once transformers release version is way above 4.22.
+
             if _transformers_version_is_below_threshold:
                 repo = self._create_or_get_repo(save_directory, **kwargs)
             else:
                 repo_id = kwargs.pop("repo_id", save_directory.split(os.path.sep)[-1])
                 repo_id = self._create_repo(repo_id, **kwargs)
-
-                use_auth_token = kwargs.get("use_auth_token", None)
                 token = kwargs.get("token", None)
 
-                if use_auth_token is not None:
+                if "use_auth_token" in kwargs:
                     warnings.warn(
-                        "The `use_auth_token` argument is deprecated and will be removed soon. Please use the `token` argument instead.",
+                        "The `use_auth_token` argument is deprecated. Please use `token` instead.",
                         FutureWarning,
                     )
                     if token is not None:
-                        raise ValueError(
-                            "You cannot use both `use_auth_token` and `token` arguments at the same time."
-                        )
-                    kwargs["token"] = use_auth_token
-                    token = use_auth_token
+                        raise ValueError("Cannot use both `use_auth_token` and `token` simultaneously.")
+                    kwargs["token"] = kwargs.pop("use_auth_token")
 
                 files_timestamps = self._get_files_timestamps(save_directory)
 
-        # TODO: remove once transformers release version is way above 4.22.
+        # Ensure the directory exists for pre-4.22 versions
         if _transformers_version_is_below_threshold:
             os.makedirs(save_directory, exist_ok=True)
 
-        # If we have a custom config, we copy the file defining it in the folder and set the attributes so it can be
-        # loaded from the Hub.
+        # If we have a custom configuration, save the custom config in the directory
         if self._auto_class is not None:
             custom_object_save(self, save_directory, config=self)
 
-        # If we save using the predefined names, we can load using `from_pretrained`
+        # Save the configuration using the default file name
         output_config_file = os.path.join(save_directory, self.CONFIG_NAME)
-
         self.to_json_file(output_config_file, use_diff=True)
         logger.info(f"Configuration saved in {output_config_file}")
 
+        # Handle pushing to the Model Hub if enabled
         if push_to_hub:
-            # TODO: remove once transformers release version is way above 4.22.
             if _transformers_version_is_below_threshold:
                 url = self._push_to_hub(repo, commit_message=commit_message)
                 logger.info(f"Configuration pushed to the hub in this commit: {url}")
@@ -133,37 +144,36 @@ class BaseConfig(PretrainedConfig):
                 self._upload_modified_files(
                     save_directory, repo_id, files_timestamps, commit_message=commit_message, token=token
                 )
-
     # Adapted from transformers.configuration_utils.PretrainedConfig.get_configuration_file
     @classmethod
     def get_configuration_file(cls, configuration_files: List[str]) -> str:
         """
-        Get the configuration file to use for this version of transformers.
+        Determines the appropriate configuration file to use based on the version of Transformers or Promise Optimizer.
 
         Args:
-            configuration_files (`List[str]`): The list of available configuration files.
+            configuration_files (List[str]): A list of available configuration files to choose from.
 
         Returns:
-            `str`: The configuration file to use.
+            str: The name of the configuration file that matches the current version of Transformers or Promise Optimizer.
         """
+        # Map to store configuration files and their corresponding versions
         configuration_files_map = {}
-        _re_configuration_file = cls._re_configuration_file()
+        _re_configuration_file = cls._re_configuration_file()  # Get regex pattern to identify valid config files
         for file_name in configuration_files:
-            search = _re_configuration_file.search(file_name)
+            search = _re_configuration_file.search(file_name)  # Match configuration file with regex
             if search is not None:
-                v = search.groups()[0]
+                v = search.groups()[0]  # Extract the version part from the file name
                 configuration_files_map[v] = file_name
-        available_versions = sorted(configuration_files_map.keys())
+        available_versions = sorted(configuration_files_map.keys())  # Sort versions
 
-        # Defaults to FULL_CONFIGURATION_FILE and then try to look at some newer versions.
+        # Default to the class's config file and check for newer versions
         configuration_file = cls.CONFIG_NAME
-        optimum_version = version.parse(__version__)
+        optimum_version = version.parse(__version__)  # Get the version of Promise Optimizer
         for v in available_versions:
             if version.parse(v) <= optimum_version:
                 configuration_file = configuration_files_map[v]
             else:
-                # No point going further since the versions are sorted.
-                break
+                break  # Stop once we find a newer version that's not applicable
 
         return configuration_file
 
@@ -173,24 +183,22 @@ class BaseConfig(PretrainedConfig):
         cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
-        From a `pretrained_model_name_or_path`, resolve to a dictionary of parameters, to be used for instantiating a
-        [`PretrainedConfig`] using `from_dict`.
+        Load the configuration dictionary from a given model checkpoint or directory.
 
-        Parameters:
-            pretrained_model_name_or_path (`str` or `os.PathLike`):
-                The identifier of the pre-trained checkpoint from which we want the dictionary of parameters.
+        Args:
+            pretrained_model_name_or_path (str or os.PathLike): The name or path of the pre-trained model or directory 
+                containing the configuration.
 
         Returns:
-            `Tuple[Dict, Dict]`: The dictionary(ies) that will be used to instantiate the configuration object.
-
+            Tuple[Dict[str, Any], Dict[str, Any]]: A tuple containing the configuration dictionary and any additional arguments.
         """
-        original_kwargs = copy.deepcopy(kwargs)
-        # Get config dict associated with the base config file
+        original_kwargs = copy.deepcopy(kwargs)  # Preserve the original kwargs
+        # Retrieve the base config dictionary using helper method `_get_config_dict`
         config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
         if "_commit_hash" in config_dict:
-            original_kwargs["_commit_hash"] = config_dict["_commit_hash"]
+            original_kwargs["_commit_hash"] = config_dict["_commit_hash"]  # Save the commit hash
 
-        # That config file may point us toward another config file to use.
+        # If the config file points to another config file, retrieve it
         if "configuration_files" in config_dict:
             configuration_file = cls.get_configuration_file(config_dict["configuration_files"])
             config_dict, kwargs = cls._get_config_dict(
@@ -204,6 +212,17 @@ class BaseConfig(PretrainedConfig):
     def _get_config_dict(
         cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        Helper method to retrieve the configuration dictionary, either from a local file, cache, or remote repository.
+
+        Args:
+            pretrained_model_name_or_path (str or os.PathLike): The path or identifier of the pre-trained model.
+            kwargs: Additional arguments for file retrieval, such as cache settings and authentication tokens.
+
+        Returns:
+            Tuple[Dict, Dict]: A tuple containing the configuration dictionary and any remaining kwargs.
+        """
+        # Handle optional arguments
         cache_dir = kwargs.pop("cache_dir", None)
         force_download = kwargs.pop("force_download", False)
         resume_download = kwargs.pop("resume_download", False)
@@ -218,6 +237,7 @@ class BaseConfig(PretrainedConfig):
         from_auto_class = kwargs.pop("_from_auto", False)
         commit_hash = kwargs.pop("_commit_hash", None)
 
+        # Deprecation warning for `use_auth_token`
         if use_auth_token is not None:
             warnings.warn(
                 "The `use_auth_token` argument is deprecated and will be removed soon. Please use the `token` argument instead.",
@@ -229,30 +249,28 @@ class BaseConfig(PretrainedConfig):
 
         if trust_remote_code is True:
             logger.warning(
-                "The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is"
-                " ignored."
+                "The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored."
             )
 
+        # Create user agent metadata
         user_agent = {"file_type": "config", "from_auto_class": from_auto_class}
         if from_pipeline is not None:
             user_agent["using_pipeline"] = from_pipeline
 
-        pretrained_model_name_or_path = str(pretrained_model_name_or_path)
+        pretrained_model_name_or_path = str(pretrained_model_name_or_path)  # Ensure string format for the path
 
         is_local = os.path.isdir(pretrained_model_name_or_path)
+        # Handle case when the model path is a local file
         if os.path.isfile(os.path.join(subfolder, pretrained_model_name_or_path)):
-            # Special case when pretrained_model_name_or_path is a local file
             resolved_config_file = pretrained_model_name_or_path
             is_local = True
-        # TODO: remove once transformers release version is way above 4.22.
+        # Handle pre-4.22 versions of Transformers
         elif _transformers_version_is_below_threshold and os.path.isdir(pretrained_model_name_or_path):
             configuration_file = kwargs.pop("_configuration_file", cls.CONFIG_NAME)
             resolved_config_file = os.path.join(pretrained_model_name_or_path, configuration_file)
             if not os.path.isfile(resolved_config_file):
-                raise EnvironmentError(
-                    f"Could not locate {configuration_file} inside {pretrained_model_name_or_path}."
-                )
-        # TODO: remove condition once transformers release version is way above 4.22.
+                raise EnvironmentError(f"Could not locate {configuration_file} inside {pretrained_model_name_or_path}.")
+        # Handle remote file resolution
         elif not _transformers_version_is_below_threshold and is_remote_url(pretrained_model_name_or_path):
             configuration_file = pretrained_model_name_or_path
             resolved_config_file = download_url(pretrained_model_name_or_path)
@@ -260,16 +278,14 @@ class BaseConfig(PretrainedConfig):
             configuration_file = kwargs.pop("_configuration_file", cls.CONFIG_NAME)
 
             try:
-                # TODO: remove once transformers release version is way above 4.22.
                 if _transformers_version_is_below_threshold:
+                    # Load from URL or cache (pre-4.22)
                     config_file = hf_bucket_url(
                         pretrained_model_name_or_path,
                         filename=configuration_file,
                         revision=revision,
                         subfolder=subfolder if len(subfolder) > 0 else None,
-                        mirror=None,
                     )
-                    # Load from URL or cache if already cached
                     resolved_config_file = cached_path(
                         config_file,
                         cache_dir=cache_dir,
@@ -281,7 +297,7 @@ class BaseConfig(PretrainedConfig):
                         user_agent=user_agent,
                     )
                 else:
-                    # Load from local folder or from cache or download from model Hub and cache
+                    # Load from cache or download (4.22 and above)
                     resolved_config_file = cached_file(
                         pretrained_model_name_or_path,
                         configuration_file,
@@ -298,76 +314,80 @@ class BaseConfig(PretrainedConfig):
                     )
                     commit_hash = extract_commit_hash(resolved_config_file, commit_hash)
             except EnvironmentError:
-                # Raise any environment error raise by `cached_file`. It will have a helpful error message adapted to
-                # the original exception.
+                # Raise the specific environment error for caching
                 raise
             except Exception:
-                # For any other exception, we throw a generic error.
+                # Generic error handling for unexpected failures
                 raise EnvironmentError(
-                    f"Can't load the configuration of '{pretrained_model_name_or_path}'. If you were trying to load it"
-                    " from 'https://huggingface.co/models', make sure you don't have a local directory with the same"
-                    f" name. Otherwise, make sure '{pretrained_model_name_or_path}' is the correct path to a directory"
-                    f" containing a {configuration_file} file"
+                    f"Can't load the configuration of '{pretrained_model_name_or_path}'. "
+                    "If you were trying to load it from 'https://huggingface.co/models', ensure no local directory exists with the same name. "
+                    f"Otherwise, verify that '{pretrained_model_name_or_path}' contains a {configuration_file} file."
                 )
 
         try:
-            # Load config dict
+            # Load the configuration dictionary from the JSON file
             config_dict = cls._dict_from_json_file(resolved_config_file)
-            # TODO: remove once transformers release version is way above 4.22.
             if _transformers_version_is_below_threshold:
-                config_dict["_commit_hash"] = commit_hash
+                config_dict["_commit_hash"] = commit_hash  # Add commit hash for old versions
         except (json.JSONDecodeError, UnicodeDecodeError):
-            raise EnvironmentError(
-                f"It looks like the config file at '{resolved_config_file}' is not a valid JSON file."
-            )
+            raise EnvironmentError(f"It appears the config file at '{resolved_config_file}' is not a valid JSON file.")
 
+        # Log where the configuration file was loaded from
         if is_local:
-            logger.info(f"loading configuration file {resolved_config_file}")
+            logger.info(f"Loading configuration file {resolved_config_file}")
         else:
-            logger.info(f"loading configuration file {configuration_file} from cache at {resolved_config_file}")
+            logger.info(f"Loading configuration file {configuration_file} from cache at {resolved_config_file}")
 
         return config_dict, kwargs
-
     # Adapted from transformers.configuration_utils.PretrainedConfig.from_dict
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any], **kwargs) -> "PretrainedConfig":
         """
-        Instantiates a [`PretrainedConfig`] from a Python dictionary of parameters.
+        Instantiates a [`PretrainedConfig`] object from a Python dictionary of parameters.
+
+        This method allows you to load a configuration object from a dictionary that could have been
+        obtained from a pre-trained model checkpoint using the `get_config_dict` method. The method also supports 
+        additional keyword arguments (`kwargs`) for initializing or overriding specific configuration attributes.
 
         Args:
-            config_dict (`Dict[str, Any]`):
-                Dictionary that will be used to instantiate the configuration object. Such a dictionary can be
-                retrieved from a pretrained checkpoint by leveraging the [`~PretrainedConfig.get_config_dict`] method.
-            kwargs (`Dict[str, Any]`):
-                Additional parameters from which to initialize the configuration object.
+            config_dict (Dict[str, Any]): The dictionary containing configuration parameters. This can come from a
+                checkpoint or manually created.
+            kwargs (Dict[str, Any]): Additional keyword arguments for initializing or modifying the configuration object.
 
         Returns:
-            [`PretrainedConfig`]: The configuration object instantiated from those parameters.
+            PretrainedConfig: An instance of the configuration class populated with the parameters from `config_dict`.
+
+        Raises:
+            ValueError: If the number of labels (`num_labels`) does not match the `id2label` mapping in `kwargs`.
         """
         return_unused_kwargs = kwargs.pop("return_unused_kwargs", False)
-        # Those arguments may be passed along for our internal telemetry.
-        # We remove them so they don't appear in `return_unused_kwargs`.
+        
+        # Remove internal telemetry arguments to avoid exposing them as unused kwargs
         kwargs.pop("_from_auto", None)
         kwargs.pop("_from_pipeline", None)
-        # The commit hash might have been updated in the `config_dict`, we don't want the kwargs to erase that update.
+
+        # Preserve any commit hash present in the config_dict
         if "_commit_hash" in kwargs and "_commit_hash" in config_dict:
             kwargs["_commit_hash"] = config_dict["_commit_hash"]
 
+        # Create a configuration instance using the parameters from config_dict
         config = cls(**config_dict)
 
+        # Handle pruned heads, ensuring the dictionary keys are integers
         if hasattr(config, "pruned_heads"):
             config.pruned_heads = {int(key): value for key, value in config.pruned_heads.items()}
 
-        # Update config with kwargs if needed
+        # Ensure consistency between num_labels and id2label in kwargs, raising an error if they are incompatible
         if "num_labels" in kwargs and "id2label" in kwargs:
             num_labels = kwargs["num_labels"]
             id2label = kwargs["id2label"] if kwargs["id2label"] is not None else []
             if len(id2label) != num_labels:
                 raise ValueError(
-                    f"You passed along `num_labels={num_labels }` with an incompatible id to label map: "
-                    f"{kwargs['id2label']}. Since those arguments are inconsistent with each other, you should remove "
-                    "one of them."
+                    f"Inconsistent arguments: `num_labels={num_labels }` does not match `id2label` length: {len(id2label)}."
+                    " Please ensure that `num_labels` and `id2label` are consistent."
                 )
+
+        # Update the config with any additional kwargs and remove used kwargs
         to_remove = []
         for key, value in kwargs.items():
             if hasattr(config, key):
@@ -377,7 +397,10 @@ class BaseConfig(PretrainedConfig):
         for key in to_remove:
             kwargs.pop(key, None)
 
+        # Log the final configuration object
         logger.info(config)
+
+        # Return config and unused kwargs if `return_unused_kwargs` is True
         if return_unused_kwargs:
             return config, kwargs
         else:
@@ -386,23 +409,33 @@ class BaseConfig(PretrainedConfig):
     # Adapted from transformers.configuration_utils.PretrainedConfig.to_dict
     def to_dict(self) -> Dict[str, Any]:
         """
-        Serializes this instance to a Python dictionary.
+        Serializes the configuration instance into a Python dictionary.
+
+        This method converts the configuration object into a deep-copied dictionary representation, 
+        which can be used to save the configuration to a file, transfer it over a network, or further 
+        modify it programmatically.
 
         Returns:
-            `Dict[str, Any]`: Dictionary of all the attributes that make up this configuration instance.
+            Dict[str, Any]: A dictionary containing all the configuration parameters and their values.
         """
+        # Create a deep copy of the configuration's attributes (to avoid modifying the original object)
         output = copy.deepcopy(self.__dict__)
+
+        # Add the model type to the dictionary if it exists in the class
         if hasattr(self.__class__, "model_type"):
             output["model_type"] = self.__class__.model_type
+
+        # Remove internal attributes that should not be serialized
         if "_auto_class" in output:
             del output["_auto_class"]
         if "_commit_hash" in output:
             del output["_commit_hash"]
 
-        # Transformers version when serializing the model
+        # Add the version of Transformers and Promise Optimizer at the time of serialization
         output["transformers_version"] = transformers_version_str
         output["optimum_version"] = __version__
 
+        # Ensure torch dtype attributes are correctly serialized as strings
         self.dict_torch_dtype_to_str(output)
 
         return output
