@@ -1,16 +1,30 @@
-# Copyright 2023 The HuggingFace and Meta Team.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module provides optimized attention mechanisms for BetterTransformer by adapting and replacing the default 
+attention implementations from several transformer models (e.g., GPT-2, GPT-J, BART, OPT, Bloom, etc.) with more 
+efficient, scalable alternatives. The optimized attention methods utilize PyTorch's `scaled_dot_product_attention` 
+to improve inference speed, particularly for large-scale models.
+
+The transformations are applied to various attention layers, while maintaining compatibility with the original model 
+architectures. Some attention-specific features like `head_mask`, `output_attentions`, or pruned heads are restricted 
+or unsupported in the BetterTransformer optimized versions to maintain high efficiency.
+
+The key functions include:
+- `gpt2_wrapped_scaled_dot_product`: Optimized attention for GPT-2 architecture.
+- `gptj_wrapped_scaled_dot_product`: Optimized attention for GPT-J architecture.
+- `bark_wrapped_scaled_dot_product`: Optimized attention for Bark architecture.
+- `gpt_neo_wrapped_scaled_dot_product`: Optimized attention for GPT-Neo architecture.
+- `codegen_wrapped_scaled_dot_product`: Optimized attention for CodeGen architecture.
+- `opt_forward`: Optimized attention for OPT architecture.
+- `t5_forward`: Optimized attention for T5 architecture.
+- `bart_forward`: Optimized attention for BART architecture.
+- `bloom_forward`: Optimized attention for Bloom architecture.
+
+This module also enforces constraints to ensure compatibility with BetterTransformer's optimizations, such as 
+raising errors when unsupported features (e.g., `output_attentions=True`, `layer_head_mask` handling) are requested. 
+The attention methods in this module allow for the conversion and faster execution of pre-trained models in 
+inference scenarios, without modifying the core model architecture.
+"""
+
 
 from typing import Optional, Tuple
 

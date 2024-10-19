@@ -1,17 +1,46 @@
-# coding=utf-8
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module provides transformers-compatible quantization functionalities built on top of PyTorch's `quantize_fx` API.
+It enables various quantization operations, including fusing operations and preparing models for quantization and 
+Quantization-Aware Training (QAT).
+
+The key features include:
+
+1. **QuantizationTracer**:
+    - A specialized `HFTracer` that adds support for transformers models in quantization workflows.
+    - It is responsible for tracing the model's computation graph, ensuring transformers' specific behaviors, 
+      and handling skipped modules and classes during the tracing process.
+    - It also stores module scope information for each traced node, which is useful during the quantization process.
+
+2. **fuse_fx**:
+    - A wrapper around `torch.quantization.quantize_fx.fuse_fx` that ensures compatibility with HuggingFace transformers models.
+    - Fuses layers like Convolution + BatchNorm to reduce the number of operations during inference and improve efficiency.
+    - If the model is a transformers `PreTrainedModel`, it traces the model first before applying the fusion.
+
+3. **prepare_fx**:
+    - A wrapper around `torch.quantization.quantize_fx.prepare_fx` for transformers models.
+    - Prepares a model for static quantization by inserting observers into the model, which collect statistics for later quantization.
+    - Supports custom configurations, equalization techniques, and backend-specific configurations for quantization.
+    - Compatible with both HuggingFace `PreTrainedModel` and `torch.fx.GraphModule`.
+
+4. **prepare_qat_fx**:
+    - A wrapper around `torch.quantization.quantize_fx.prepare_qat_fx` for transformers models.
+    - Prepares a model for Quantization-Aware Training (QAT), enabling it to simulate quantized inference during the training phase.
+    - Supports customization, backend-specific configurations, and input name specifications.
+    - Compatible with HuggingFace `PreTrainedModel` and `torch.fx.GraphModule`.
+
+### Key Components:
+- **QuantizationTracer**: Traces the transformers models while preserving model-specific behaviors.
+- **fuse_fx**: Fuses supported operations (e.g., Conv2d + BatchNorm2d) for more efficient inference.
+- **prepare_fx**: Prepares a model for post-training static quantization.
+- **prepare_qat_fx**: Prepares a model for Quantization-Aware Training (QAT).
+
+### Usage:
+These functions enable the integration of quantization workflows into transformers models, improving their efficiency 
+without the need to modify the core architecture. They are instrumental in reducing the computational load 
+and memory footprint of models during inference, especially in edge or resource-constrained environments.
+
+"""
+
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import torch

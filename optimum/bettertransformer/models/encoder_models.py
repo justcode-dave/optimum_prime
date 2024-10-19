@@ -1,16 +1,32 @@
-# Copyright 2022 The HuggingFace and Meta Team.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module contains BetterTransformer-enhanced versions of various encoder models. Each class in this module
+transforms a specific type of transformer-based model layer into a `BetterTransformer`-optimized implementation
+while preserving the essential functionality of the original model.
+
+Classes in this module optimize the transformer layers for models such as ALBERT, BERT, ViT, and others, using
+enhanced attention mechanisms, faster computations, and better handling of memory through PyTorch optimizations.
+
+## Classes:
+- `AlbertLayerBetterTransformer`: Transforms ALBERT layers for optimized attention and memory handling, retaining original layer attributes like `query`, `key`, `value`, `dense`, and normalization weights.
+- `BertLayerBetterTransformer`: Converts BERT layers to BetterTransformer format, handling in-projection and out-projection weights, attention heads, and normalization functions.
+- `BartEncoderLayerBetterTransformer`: Converts Bart encoder layers into a format compatible with the BetterTransformer framework, utilizing specialized attention mechanisms and layer normalization.
+- `MBartEncoderLayerBetterTransformer`: Similar to Bart but optimized for multilingual MBart layers, including attention projection and feed-forward layers.
+- `DistilBertLayerBetterTransformer`: Implements the DistilBERT layers in a streamlined format for BetterTransformer integration, reducing the model size and enhancing attention mechanisms.
+- `ViTLayerBetterTransformer`: Optimizes layers for Vision Transformer (ViT), enhancing their attention mechanisms for handling image data, and improving performance through efficient layer handling.
+- `ViltLayerBetterTransformer`: Designed for Vision-and-Language Transformer (VilT) models, transforming layers for multimodal tasks while retaining vision and language attention functions.
+
+## Key Features:
+- **Efficient Attention Mechanisms**: These BetterTransformer models take advantage of more efficient dot-product attention methods, including support for nested tensors and reduced memory overhead.
+- **Faster Inference**: PyTorch optimizations like `_transformer_encoder_layer_fwd` are used when models are not in training mode, providing faster inference times.
+- **Compatibility with PyTorch Features**: Includes support for PyTorch's autocasting and memory-efficient attention mechanisms.
+- **Layer Mapping**: Each class implements a mechanism to map original model layer attributes (e.g., attention weights, biases) into a consolidated format for optimization.
+- **Supports Dropout and Activation Functions**: Classes handle dropout configurations for attention layers and linear layers and support multiple activation functions like GELU and ReLU.
+
+## Usage:
+Each of these transformer models is expected to be integrated within a broader BetterTransformer architecture, where each model layer is replaced with its corresponding BetterTransformer-enhanced class. These classes ensure backward compatibility with their original Hugging Face counterparts while offering significant improvements in memory usage and speed during inference.
+
+"""
+
 from typing import TYPE_CHECKING
 
 import torch

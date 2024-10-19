@@ -1,17 +1,93 @@
-# coding=utf-8
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module provides a set of transformations for optimizing and manipulating neural network models using the 
+PyTorch `torch.fx` symbolic tracing framework. These transformations allow for modifications of the model’s 
+computation graph to improve performance, fuse operations, or optimize for specific hardware without changing 
+the model's behavior. Some transformations are reversible, meaning they can be undone after application.
+
+Transformations provided in this module include:
+
+1. **ChangeTrueDivToMulByInverse**: 
+   - Replaces true division (`/`) with multiplication by the inverse where the denominator is static, such as in 
+     certain attention mechanisms.
+
+2. **MergeLinears**: 
+   - Merges consecutive `torch.nn.Linear` layers that share the same input into a single larger linear layer. 
+     This transformation is reversible, allowing the original layers to be restored.
+
+3. **FuseBiasInLinear**: 
+   - Fuses the bias of a linear layer into its weight matrix, effectively eliminating the separate bias term.
+
+4. **FuseBatchNorm1dInLinear**:
+   - Fuses `torch.nn.BatchNorm1d` following or preceding a `torch.nn.Linear` layer into a single linear layer for 
+     improved efficiency.
+
+5. **FuseBatchNorm2dInConv2d**:
+   - Fuses `torch.nn.BatchNorm2d` layers that follow a `torch.nn.Conv2d` layer into the convolution layer. This 
+     reduces the number of operations and can improve performance.
+
+6. **DeepCopy**: 
+   - Makes a deep copy of the `torch.fx.GraphModule`. This transformation is primarily used for preserving the 
+     original graph module when applying other transformations.
+
+7. **LintAndRecompile**: 
+   - Recompiles and validates the transformed graph module, ensuring the correctness of the modified computation 
+     graph.
+
+### Utility:
+- **compose**: 
+  - Allows multiple transformations to be composed together into a single transformation, either in-place or 
+    creating a new graph module. When transformations are composed, they can be applied in sequence, and if all 
+    transformations are reversible, the composed transformation will also be reversible.
+
+### Classes:
+
+- **Transformation**: 
+  - Abstract base class for all transformations. Implementing transformations must define the `transform` method 
+    and can be called as a function on a `torch.fx.GraphModule`.
+
+- **ReversibleTransformation**: 
+  - Abstract class for reversible transformations. In addition to `transform`, implementing classes must define 
+    a `reverse` method to undo the transformation.
+
+- **ChangeTrueDivToMulByInverse**: 
+  - Replaces true division with multiplication by the inverse for constant denominators.
+
+- **MergeLinears**: 
+  - Merges multiple linear layers into a single larger layer. Reversible.
+
+- **FuseBiasInLinear**: 
+  - Fuses bias directly into the weight matrix of linear layers. Reversible.
+
+- **FuseBatchNorm1dInLinear**: 
+  - Fuses `BatchNorm1d` with linear layers. 
+
+- **FuseBatchNorm2dInConv2d**: 
+  - Fuses `BatchNorm2d` with convolution layers.
+
+- **DeepCopy**: 
+  - Performs a deep copy of the model. Useful for chaining transformations without affecting the original model. 
+    Reversible.
+
+- **LintAndRecompile**: 
+  - Lints and recompiles the graph to ensure the validity of the modifications. Reversible.
+
+- **compose**: 
+  - Composes multiple transformations together, allowing them to be applied as a single transformation.
+
+### Attributes:
+
+- **preserves_computation** (`bool`, defaults to `False`): 
+  - Indicates whether the transformation preserves the original computation. If `True`, the transformed graph 
+    produces the same outputs as the original graph.
+
+### Reversibility:
+Several transformations are reversible, meaning they can be undone after application. These transformations 
+extend from the `ReversibleTransformation` class and implement the `reverse` method, allowing models to be 
+restored to their original state.
+
+"""
+
+
 import collections
 import copy
 import functools

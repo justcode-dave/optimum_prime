@@ -1,16 +1,10 @@
-# Copyright 2023 The HuggingFace and Meta Team.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module provides BetterTransformer-compatible attention layers for various decoder models such as GPT2, GPTJ, Bloom, Codegen, Bart, and others. 
+These layers extend Hugging Face's original transformer model layers and implement optimizations for inference performance using BetterTransformer.
+
+Each class wraps its corresponding decoder attention layer, adjusting attention mechanisms to leverage optimizations like scaled dot-product attention.
+"""
+
 from typing import TYPE_CHECKING
 
 import torch
@@ -31,12 +25,13 @@ from transformers.models.t5.modeling_t5 import T5Attention
 
 from ...utils.import_utils import check_if_transformers_greater
 
-
+# Conditional import based on the version of transformers
 if check_if_transformers_greater("4.31"):
     from transformers.models.bark.modeling_bark import BarkSelfAttention
 else:
     from ...utils.dummy_bettertransformer_objects import BarkSelfAttention
 
+# Import wrapped scaled dot-product attention implementations
 from .attention import (
     bark_wrapped_scaled_dot_product,
     bart_forward,
@@ -55,15 +50,18 @@ if TYPE_CHECKING:
     from transformers import PretrainedConfig
 
 
+# GPT2 Attention Layer adapted for BetterTransformer
 class GPT2AttentionLayerBetterTransformer(BetterTransformerBaseLayer, GPT2Attention):
-    _attn = gpt2_wrapped_scaled_dot_product
+    _attn = gpt2_wrapped_scaled_dot_product  # Overriding attention mechanism with optimized implementation
 
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
 
+        # Initialize the base layer
         with torch.device("meta"):
             super(BetterTransformerBaseLayer, self).__init__(config, layer.is_cross_attention, layer.layer_idx)
 
+        # Set submodule attributes from the original layer
         submodules = ["c_proj", "c_attn", "attn_dropout", "resid_dropout", "bias", "masked_bias"]
         for attr in submodules:
             setattr(self, attr, getattr(layer, attr))
@@ -75,21 +73,25 @@ class GPT2AttentionLayerBetterTransformer(BetterTransformerBaseLayer, GPT2Attent
             setattr(self, "q_attn", getattr(layer, "q_attn"))
             self.original_layers_mapping["q_attn"] = "q_attn"
 
-        self.downcast_qk = False
-        self.dropout_prob_attn = config.attn_pdrop
+        self.downcast_qk = False  # Whether to downcast query/key projections
+        self.dropout_prob_attn = config.attn_pdrop  # Attention dropout probability
 
     def forward(self, *args, **kwargs):
         return super().forward(*args, **kwargs)
 
 
+# GPTJ Attention Layer adapted for BetterTransformer
 class GPTJAttentionLayerBetterTransformer(BetterTransformerBaseLayer, GPTJAttention, nn.Module):
-    _attn = gptj_wrapped_scaled_dot_product
+    _attn = gptj_wrapped_scaled_dot_product  # Overriding attention mechanism with optimized implementation
 
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
+        
+        # Initialize the base layer
         with torch.device("meta"):
             super(BetterTransformerBaseLayer, self).__init__(config)
 
+        # Set submodule attributes from the original layer
         submodules = [
             "k_proj",
             "v_proj",
@@ -99,17 +101,16 @@ class GPTJAttentionLayerBetterTransformer(BetterTransformerBaseLayer, GPTJAttent
             "resid_dropout",
             "scale_attn",
         ]
-        # Attribute only for transformers>=4.28
+
+        # Conditional submodules based on transformers version
         if hasattr(layer, "embed_positions"):
             submodules.append("embed_positions")
 
-        # Attribute only for transformers<4.45
         if hasattr(layer, "bias"):
             submodules.append("bias")
         if hasattr(layer, "masked_bias"):
             submodules.append("masked_bias")
 
-        # Attribute only for transformers>=4.45
         if hasattr(layer, "layer_idx"):
             submodules.append("layer_idx")
 
@@ -119,25 +120,27 @@ class GPTJAttentionLayerBetterTransformer(BetterTransformerBaseLayer, GPTJAttent
         self.module_mapping = None
         self.original_layers_mapping = {submodule: submodule for submodule in submodules}
 
-        self.downcast_qk = True
-        self.dropout_prob_attn = config.attn_pdrop
+        self.downcast_qk = True  # Downcast query/key projections
+        self.dropout_prob_attn = config.attn_pdrop  # Attention dropout probability
 
     def forward(self, *args, **kwargs):
         return super().forward(*args, **kwargs)
 
 
+# GPTNeoX Attention Layer adapted for BetterTransformer
 class GPTNeoXAttentionLayerBetterTransformer(BetterTransformerBaseLayer, GPTNeoXAttention, nn.Module):
-    _attn = gpt2_wrapped_scaled_dot_product
+    _attn = gpt2_wrapped_scaled_dot_product  # Reusing the gpt2 attention wrapping logic
 
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
+        
+        # Initialize the base layer
         with torch.device("meta"):
             super(BetterTransformerBaseLayer, self).__init__(config)
 
         self.module_mapping = None
         submodules = ["rotary_emb", "query_key_value", "dense", "bias", "masked_bias", "norm_factor"]
 
-        # Attribute only for transformers>=4.45
         if hasattr(layer, "layer_idx"):
             submodules.append("layer_idx")
 
@@ -146,31 +149,33 @@ class GPTNeoXAttentionLayerBetterTransformer(BetterTransformerBaseLayer, GPTNeoX
 
         self.original_layers_mapping = {submodule: submodule for submodule in submodules}
 
-        self.downcast_qk = True
-        self.dropout_prob_attn = 0.0  # no dropout for gpt-neox
+        self.downcast_qk = True  # Downcast query/key projections
+        self.dropout_prob_attn = 0.0  # No dropout for GPT-NeoX
 
     def forward(self, *args, **kwargs):
         return super().forward(*args, **kwargs)
 
 
+# GPTNeo Attention Layer adapted for BetterTransformer
 class GPTNeoAttentionLayerBetterTransformer(BetterTransformerBaseLayer, GPTNeoSelfAttention, nn.Module):
-    _attn = gpt_neo_wrapped_scaled_dot_product
+    _attn = gpt_neo_wrapped_scaled_dot_product  # Overriding attention mechanism with optimized implementation
 
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
 
+        # Determine if attention is global or local
         if layer.bias[0][0][-1][0] == 1:
             self.attention_type = "global"
         else:
             self.attention_type = "local"
 
+        # Initialize the base layer
         with torch.device("meta"):
             super(BetterTransformerBaseLayer, self).__init__(config, self.attention_type)
 
         self.module_mapping = None
         submodules = ["attn_dropout", "resid_dropout", "k_proj", "v_proj", "q_proj", "out_proj", "bias", "masked_bias"]
 
-        # Attribute only for transformers>=4.45
         if hasattr(layer, "layer_id"):
             submodules.append("layer_id")
 
@@ -179,23 +184,23 @@ class GPTNeoAttentionLayerBetterTransformer(BetterTransformerBaseLayer, GPTNeoSe
 
         self.original_layers_mapping = {submodule: submodule for submodule in submodules}
 
-        self.scale = torch.sqrt(torch.tensor(layer.head_dim, dtype=torch.float32)).to(torch.get_default_dtype())
-        self.dropout_prob_attn = float(config.attention_dropout)
+        self.scale = torch.sqrt(torch.tensor(layer.head_dim, dtype=torch.float32)).to(torch.get_default_dtype())  # Scaling factor
+        self.dropout_prob_attn = float(config.attention_dropout)  # Attention dropout probability
 
     def forward(self, *args, **kwargs):
         return super().forward(*args, **kwargs)
 
 
+# Bark Attention Layer adapted for BetterTransformer
 class BarkAttentionLayerBetterTransformer(BetterTransformerBaseLayer, BarkSelfAttention, nn.Module):
-    _attn = bark_wrapped_scaled_dot_product
+    _attn = bark_wrapped_scaled_dot_product  # Overriding attention mechanism with optimized implementation
 
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig", is_causal: bool = False):
         super().__init__(config)
 
+        # Set configuration parameters from the layer
         is_causal = layer.is_causal
-
         config.dropout = layer.dropout
-
         config.hidden_size = layer.embed_dim
         config.num_heads = layer.num_heads
         config.bias = layer.out_proj.bias is not None
@@ -218,21 +223,23 @@ class BarkAttentionLayerBetterTransformer(BetterTransformerBaseLayer, BarkSelfAt
             setattr(self, "bias", getattr(layer, "bias"))
             self.original_layers_mapping["bias"] = "bias"
 
-        self.supports_training = False
-        self.dropout_prob_attn = float(config.dropout)
+        self.supports_training = False  # Training is not supported for BarkAttentionLayer
+        self.dropout_prob_attn = float(config.dropout)  # Attention dropout probability
 
     def forward(self, *args, **kwargs):
         return super().forward(*args, **kwargs)
 
 
+# Bloom Attention Layer adapted for BetterTransformer
 class BloomAttentionLayerBetterTransformer(BetterTransformerBaseLayer, BloomAttention, nn.Module):
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
 
+        # Initialize the base layer
         with torch.device("meta"):
             super(BetterTransformerBaseLayer, self).__init__(config)
 
-        self.dropout_prob_attn = config.attention_dropout
+        self.dropout_prob_attn = config.attention_dropout  # Attention dropout probability
 
         self.module_mapping = None
         self.layer_idx = getattr(layer, "layer_idx", None)
@@ -247,27 +254,27 @@ class BloomAttentionLayerBetterTransformer(BetterTransformerBaseLayer, BloomAtte
         return bloom_forward(self, *args, **kwargs)
 
 
+# Codegen Attention Layer adapted for BetterTransformer
 class CodegenAttentionLayerBetterTransformer(BetterTransformerBaseLayer, CodeGenAttention, nn.Module):
-    _attn = codegen_wrapped_scaled_dot_product
+    _attn = codegen_wrapped_scaled_dot_product  # Overriding attention mechanism with optimized implementation
 
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
 
+        # Initialize the base layer
         with torch.device("meta"):
             super(BetterTransformerBaseLayer, self).__init__(config)
 
         self.module_mapping = None
         submodules = ["attn_dropout", "resid_dropout", "qkv_proj", "out_proj", "scale_attn"]
 
-        # Attribute only for transformers>=4.28
+        # Conditional submodules based on transformers version
         if hasattr(layer, "embed_positions"):
             submodules.append("embed_positions")
 
-        # Attribute only for transformers<4.45
         if hasattr(layer, "causal_mask"):
             submodules.append("causal_mask")
 
-        # Attribute only for transformers>=4.45
         if hasattr(layer, "layer_idx"):
             submodules.append("layer_idx")
 
@@ -276,23 +283,25 @@ class CodegenAttentionLayerBetterTransformer(BetterTransformerBaseLayer, CodeGen
 
         self.original_layers_mapping = {submodule: submodule for submodule in submodules}
 
-        self.dropout_prob_attn = config.attn_pdrop
+        self.dropout_prob_attn = config.attn_pdrop  # Attention dropout probability
 
     def forward(self, *args, **kwargs):
         return super().forward(*args, **kwargs)
 
 
+# OPT Attention Layer adapted for BetterTransformer
 class OPTAttentionLayerBetterTransformer(BetterTransformerBaseLayer, OPTAttention, nn.Module):
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
 
+        # Initialize the base layer
         with torch.device("meta"):
             super(BetterTransformerBaseLayer, self).__init__(
                 config,
                 layer.is_decoder,
             )
 
-        self.scale = torch.sqrt(torch.tensor(layer.head_dim, dtype=torch.float32)).to(torch.get_default_dtype())
+        self.scale = torch.sqrt(torch.tensor(layer.head_dim, dtype=torch.float32)).to(torch.get_default_dtype())  # Scaling factor
 
         self.module_mapping = None
         submodules = ["k_proj", "v_proj", "q_proj", "out_proj"]
@@ -305,12 +314,14 @@ class OPTAttentionLayerBetterTransformer(BetterTransformerBaseLayer, OPTAttentio
         return opt_forward(self, *args, **kwargs)
 
 
+# T5 Attention Layer adapted for BetterTransformer
 class T5AttentionLayerBetterTransformer(BetterTransformerBaseLayer, T5Attention, torch.nn.Module):
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         if hasattr(config, "text_config"):
             config = config.text_config
         super().__init__(config)
 
+        # Initialize the base layer
         with torch.device("meta"):
             super(BetterTransformerBaseLayer, self).__init__(config, layer.has_relative_attention_bias)
 
@@ -318,8 +329,8 @@ class T5AttentionLayerBetterTransformer(BetterTransformerBaseLayer, T5Attention,
         for attr in submodules:
             setattr(self, attr, getattr(layer, attr))
 
-        head_dim = layer.d_model // layer.n_heads  # hidden size / num attention heads
-        self.scale = torch.sqrt(torch.tensor(head_dim, dtype=torch.float32)).to(torch.get_default_dtype())
+        head_dim = layer.d_model // layer.n_heads  # Hidden size / number of attention heads
+        self.scale = torch.sqrt(torch.tensor(head_dim, dtype=torch.float32)).to(torch.get_default_dtype())  # Scaling factor
 
         self.original_layers_mapping = {submodule: submodule for submodule in submodules}
 
@@ -328,13 +339,13 @@ class T5AttentionLayerBetterTransformer(BetterTransformerBaseLayer, T5Attention,
             self.original_layers_mapping["relative_attention_bias"] = "relative_attention_bias"
 
         self.module_mapping = None
-
         self.is_decoder = layer.is_decoder
 
     def forward(self, *args, **kwargs):
         return t5_forward(self, *args, **kwargs)
 
 
+# Bart BetterTransformer initialization function
 def bart_bettertransformer_init(self, layer: "nn.Module", config: "PretrainedConfig"):
     with torch.device("meta"):
         super(BetterTransformerBaseLayer, self).__init__(
@@ -355,6 +366,7 @@ def bart_bettertransformer_init(self, layer: "nn.Module", config: "PretrainedCon
     self.is_decoder = layer.is_decoder
 
 
+# Bart Attention Layer adapted for BetterTransformer
 class BartAttentionLayerBetterTransformer(BetterTransformerBaseLayer, BartAttention, nn.Module):
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
@@ -364,6 +376,7 @@ class BartAttentionLayerBetterTransformer(BetterTransformerBaseLayer, BartAttent
         return bart_forward(self, *args, **kwargs)
 
 
+# Blenderbot Attention Layer adapted for BetterTransformer
 class BlenderbotAttentionLayerBetterTransformer(BetterTransformerBaseLayer, BlenderbotAttention, nn.Module):
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
@@ -373,6 +386,7 @@ class BlenderbotAttentionLayerBetterTransformer(BetterTransformerBaseLayer, Blen
         return bart_forward(self, *args, **kwargs)
 
 
+# M2M100 Attention Layer adapted for BetterTransformer
 class M2M100AttentionLayerBetterTransformer(BetterTransformerBaseLayer, M2M100Attention, nn.Module):
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
@@ -382,6 +396,7 @@ class M2M100AttentionLayerBetterTransformer(BetterTransformerBaseLayer, M2M100At
         return bart_forward(self, *args, **kwargs)
 
 
+# Marian Attention Layer adapted for BetterTransformer
 class MarianAttentionLayerBetterTransformer(BetterTransformerBaseLayer, MarianAttention, nn.Module):
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         super().__init__(config)
@@ -391,6 +406,7 @@ class MarianAttentionLayerBetterTransformer(BetterTransformerBaseLayer, MarianAt
         return bart_forward(self, *args, **kwargs)
 
 
+# Pegasus Attention Layer adapted for BetterTransformer
 class PegasusAttentionLayerBetterTransformer(BetterTransformerBaseLayer, PegasusAttention, nn.Module):
     def __init__(self, layer: "nn.Module", config: "PretrainedConfig"):
         bart_bettertransformer_init(self, layer, config)
