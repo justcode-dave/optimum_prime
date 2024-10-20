@@ -1,20 +1,24 @@
-#  Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+"""
+ONNX Model Graph Transformations.
+
+This module provides functionality for applying a variety of graph transformations to ONNX models,
+enabling optimizations and modifications for deployment and inference.
+
+Features:
+    - cast_slice_nodes_inputs_to_int32: Ensure that the inputs to slice nodes are cast to int32.
+    - merge_decoders: Combine multiple decoder components into a single structure.
+    - remove_duplicate_weights: Detect and remove redundant weights in the model to optimize size.
+    - replace_atenops_to_gather: Replace specific PyTorch ATen operations with ONNX gather operations.
+    - remove_duplicate_weights_from_tied_info: Clean up redundant weight references in models with tied weights.
+
+Usage:
+    This module uses lazy loading to delay importing until the specific functions are accessed. 
+    This improves initial load performance when the module is not used.
+"""
+
 from typing import TYPE_CHECKING
 
 from transformers.utils import _LazyModule
-
 
 _import_structure = {
     "graph_transformations": [

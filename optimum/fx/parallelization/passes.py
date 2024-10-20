@@ -1,17 +1,71 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+Passes for Automatic Parallelization in PyTorch Models using FX Tracing.
+
+This module provides various passes for parallelizing models automatically using PyTorch FX (Function Transformations).
+These passes allow for modifying, analyzing, and optimizing the model graph to efficiently distribute workloads across
+devices. The pipeline consists of different stages that progressively transform and optimize the graph, handling 
+operations like parallel axis solving, annotating layers for parallelism, replacing layers with parallelized versions, 
+and initializing or loading weights for parallelized models.
+
+Classes:
+    - PassBase: Abstract base class for all passes, defining the interface for running and applying transformations 
+      on the model graph.
+    - AnalyzeBase: Base class for analysis-only passes that preserve the graph structure and store analytical 
+      information to be used by later passes.
+    - ParallelAxisSolverPass: Identifies and propagates parallel axes through the graph, solving for a feasible
+      parallelization strategy using decomposition, functionalization, and backtracking search.
+    - ParallelLayerAnnotatePass: Annotates layers where input and output tensors require communication between 
+      devices due to parallelization, such as in Megatron-style layers.
+    - ParallelLayerReplacePass: Replaces layers with their parallel counterparts based on annotations from previous
+      passes. Handles linear and embedding layers, cross entropy, and modifies hard-coded parameters such as attention
+      head numbers.
+    - InitializeOrLoadWeightsPass: Initializes or loads weights for parallelized parameters. Supports both 
+      initialization for newly created parameters and loading weights from disk for distributed execution.
+    - PassPipeline: Manages the execution of a series of passes in sequence to apply multiple transformations on the 
+      model graph.
+    
+Functions:
+    - build_parallel_pass_pipeline: Constructs a pipeline consisting of parallel axis solving, layer annotation, 
+      layer replacement, and weight initialization passes.
+
+Detailed Explanation:
+    - **Decomposition and Functionalization**: The traced graph module consists of high-level PyTorch operations. 
+      To make analysis easier and reduce the set of operations to consider, the high-level graph is decomposed into 
+      core `aten` operations, and functionalization is performed to remove in-place operations.
+    
+    - **Parallel Axis Propagation**: Parallelism is applied by propagating parallel axes through the decomposed graph. 
+      This step ensures that certain operations, such as matrix multiplications or embedding lookups, are distributed 
+      across devices. The propagation logic is defined for a subset of core `aten` operations, covering most 
+      transformer models.
+
+    - **Parallel Layer Replacement**: Based on the propagated parallel axes, layers are replaced with their parallel 
+      counterparts (e.g., ColumnParallelLinear or VocabParallelEmbedding). Parameters and weights are updated to 
+      reflect the parallelization.
+
+    - **Weight Initialization/Loading**: Finally, if the model is distributed, weights are loaded from disk for 
+      parallelized parameters, or newly created parameters are initialized based on the provided initialization 
+      function. This ensures that all parameters are appropriately distributed and ready for execution.
+
+Example Usage:
+    ```python
+    from passes import build_parallel_pass_pipeline, ParallelExecutionCtx, Config
+    from torch.fx import symbolic_trace
+    from transformers import BertModel
+
+    # Model to be parallelized
+    model = BertModel.from_pretrained("bert-base-uncased")
+    traced_model = symbolic_trace(model)
+
+    # Parallel execution context and configuration
+    parallel_ctx = ParallelExecutionCtx(tp_group, torch.device("cuda:0"))
+    config = Config()
+
+    # Build pass pipeline and parallelize model
+    pipeline = build_parallel_pass_pipeline()
+    parallelized_model = pipeline(traced_model, ctx=parallel_ctx, config=config)
+    ```
+"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

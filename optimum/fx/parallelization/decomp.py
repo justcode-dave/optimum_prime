@@ -1,17 +1,36 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module implements the decomposition and functionalization of high-level PyTorch operations 
+into low-level core `aten` operations for advanced graph manipulation and parallelization. 
+It leverages PyTorch's FX (Functional Transformation) system, enabling transformations and 
+tracing of computation graphs.
+
+Classes:
+    - `DecompTracer`: A custom tracer class that tracks tensors and their corresponding proxy objects 
+      during execution. Works with `DecompositionInterpreter` to trace the computation graph.
+    - `DecompositionInterpreter`: Decomposes high-level PyTorch operations into core `aten` operations 
+      using PyTorch's dispatch mechanism. It runs nodes of a graph module in topological order 
+      while preserving certain primitive layers for parallelization heuristics.
+  
+Functions:
+    - `decompose_and_functionalize`: Decomposes a high-level graph module into its low-level equivalent, 
+      enabling fine-grained control for parallel axis propagation and analysis.
+
+Key Concepts:
+    - **Graph Decomposition**: This process translates high-level operations into more granular 
+      and lower-level operations (core `aten` ops) for detailed optimization, parallelization, or transformation purposes.
+    - **Functionalization**: Ensures that all tensor operations are tracked as functions within the 
+      traced graph, which helps in building a fully functional and optimized execution pipeline.
+    - **Leaf Modules**: Certain modules like `nn.Linear`, `nn.Embedding`, and common activation functions 
+      are preserved as-is to facilitate custom parallelization strategies. They are treated as leaf nodes 
+      in the graph and bypass further decomposition.
+
+Usage:
+    The decomposition and functionalization framework is intended for advanced users working on optimizing 
+    model execution through parallelization or other forms of computational graph manipulation. This framework 
+    allows for modifying the internal structure of computation graphs while preserving key operations 
+    for specific transformations.
+"""
+
 import contextlib
 from typing import Callable, Dict, List
 

@@ -1,17 +1,37 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module defines distributed operations tailored for parallelization in deep learning models.
+It leverages PyTorch's `torch.distributed` API to implement communication patterns such as all-reduce, 
+all-gather, and scatter, essential for synchronizing and splitting data across multiple devices. 
+Furthermore, these operations are differentiable, meaning that they can integrate with the backpropagation 
+process and propagate gradients during training.
+
+Key Functionalities:
+    - **all_reduce**: A function to sum up tensors from all devices and distribute the result back.
+    - **all_gather**: A function to gather tensors from all devices into a single tensor.
+    - **split**: A function to split a tensor across devices based on the dimension specified.
+    - **scatter**: A function to distribute slices of the input tensor across devices.
+    - **Differentiable Functions**:
+        - `DifferentiableIdentity`: A differentiable identity operation for distributed use.
+        - `DifferentiableAllReduceSum`: A differentiable version of all-reduce.
+        - `DifferentiableAllGather`: A differentiable version of all-gather.
+        - `DifferentiableScatter`: A differentiable version of scatter.
+    
+These operations support efficient data distribution and aggregation in distributed deep learning training, 
+ensuring synchronization and correct gradient propagation across multiple devices.
+
+Functions:
+    - all_reduce: Performs a sum of the tensor values across the devices in the specified process group.
+    - all_gather: Gathers tensors from all devices into a single concatenated tensor.
+    - split: Splits the input tensor along the specified dimension across the devices.
+    - scatter: Distributes slices of a tensor across devices, based on the dimension specified.
+
+Differentiable Operations:
+    - differentiable_all_reduce_sum: Differentiable all-reduce sum for gradient propagation.
+    - differentiable_identity: Differentiable identity operation.
+    - differentiable_all_gather: Differentiable all-gather operation for gathering data from all devices.
+    - differentiable_scatter: Differentiable scatter operation to split data across devices.
+"""
+
 import torch
 import torch.distributed as dist
 

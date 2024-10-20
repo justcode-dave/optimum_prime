@@ -1,17 +1,27 @@
 # coding=utf-8
-# Copyright 2023 HuggingFace Inc. team and GPTQ and AutoGPTQ authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+GPTQ Quantization Utilities.
+
+This module provides tools for applying GPTQ (Generalized Post-Training Quantization)
+to transformer models. It includes functionality for converting models to quantized versions,
+loading quantized models, and performing model quantization in various scenarios.
+
+Classes:
+    - GPTQQuantizer: Handles GPTQ quantization with configurable settings for the number of bits,
+      sequence length, dataset, and other parameters.
+    - ExllamaVersion: Enum defining supported versions of the Exllama backend used for certain optimizations.
+
+Functions:
+    - load_quantized_model: Load quantized weights from a directory into a converted model,
+      with options for device mapping, state dict loading, and offloading strategies.
+
+Features:
+    - Support for 2, 3, 4, and 8-bit quantization.
+    - Options for quantizing specific modules, using act-order, dampening, and sequential quantization.
+    - Compatibility with the `exllama` backend for optimized inference on 4-bit models.
+    - Quantized model packing, state-saving, and loading capabilities.
+"""
+
 import json
 import os
 from enum import Enum

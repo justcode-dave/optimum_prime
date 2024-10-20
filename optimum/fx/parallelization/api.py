@@ -1,17 +1,26 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module provides core API functionalities for enabling automatic model parallelism 
+using PyTorch FX within the `optimum.fx` framework. It includes methods for handling 
+parallelized model execution, optimizing models for distributed environments, and 
+preparing the necessary configurations and contexts for model parallelization.
+
+Functions:
+    - `parallelize_backend`: Applies parallelization passes and optimizations on a given 
+      FX `GraphModule` based on the execution context and parallel configuration.
+    - `parallelize_model`: Downloads or loads a model, sets up parallel execution contexts, 
+      applies FX-based optimizations, and compiles the model for parallel execution.
+
+Key Concepts:
+    - `ParallelExecutionCtx`: Represents the parallel execution context, which includes 
+      information about the devices and process groups for distributed parallel execution.
+    - `Config`: A configuration class that handles various parallelization settings and options.
+    - `MetaAwareMethodsPatcher`: A utility for patching meta-aware methods during model tracing 
+      and compilation.
+    - `move_model_to_device`: Ensures the model is moved to the appropriate device for parallel execution.
+    - `torch.compile`: The PyTorch compilation feature used here to apply the parallelization 
+      backend to the model, enabling optimized execution.
+"""
+
 import importlib
 import os
 from functools import partial

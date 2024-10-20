@@ -1,16 +1,31 @@
-#  Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+"""
+Seq2Seq Decoder Model with Language Modeling Head for ONNX Export.
+
+This module defines a decoder model equipped with a language modeling (LM) head, primarily used in Seq2Seq tasks.
+The model is designed for ONNX export compatibility and works with pre-trained models from the Hugging Face library.
+
+The `_DecoderWithLMhead` class extracts the decoder from a pre-trained transformer model, attaches a language modeling
+head on top, and provides an interface for running inference with or without teacher forcing (using labels for loss computation).
+
+Main Features:
+    - Support for decoder input sequences (`input_ids`) and encoder hidden states (`encoder_hidden_states`).
+    - Option to provide precomputed `past_key_values` for efficient decoding during autoregressive tasks.
+    - Rescaling of outputs for specific models like T5 to ensure compatibility with tied word embeddings.
+    - Computes cross-entropy loss when `labels` are provided, otherwise returns language model logits for inference.
+
+Arguments for Forward Pass:
+    - `input_ids`: Decoder input sequence.
+    - `encoder_hidden_states`: Hidden states from the encoder, typically the output of the encoder stack.
+    - `attention_mask`: Optional mask to avoid attention on padding tokens in the input.
+    - `encoder_attention_mask`: Optional mask for cross-attention on the encoder input.
+    - `past_key_values`: Precomputed key and value states to speed up autoregressive decoding.
+    - `labels`: Optional target labels for computing cross-entropy loss during training.
+
+Returns:
+    - When `labels` are provided, the function returns a tuple of loss, logits, and updated past key values.
+    - Without `labels`, it returns logits and updated past key values.
+"""
+
 from typing import Optional, Tuple
 
 import torch

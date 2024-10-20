@@ -1,16 +1,24 @@
-#  Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+"""
+ONNX Model Configuration.
+
+This module provides configurations for exporting Hugging Face models to the ONNX format,
+with a focus on encoder and decoder configurations.
+
+The provided configurations enable structured and efficient handling of model inputs and outputs
+for both encoders and decoders. It also supports models with `past_key_values`, enabling optimized
+inference for models with sequential data.
+
+Features:
+    - `EncoderOnnxConfig`: Configures input and output shapes for encoder-only models.
+    - `DecoderOnnxConfig`: Extends `OnnxSeq2SeqConfigWithPast` to support decoders with attention and `past_key_values`.
+    - Input and output shape definitions for both encoder and decoder models.
+    - Supports generation of dummy inputs for testing and export purposes.
+    - Handles `past_key_values` for models that need efficient handling of sequential inputs.
+
+This module uses properties to define the input and output formats for ONNX models, 
+allowing easy access and modification of shapes, batch sizes, and sequence lengths.
+"""
+
 
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, Dict, Optional

@@ -1,17 +1,36 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module defines a parallelized version of the embedding layer, specifically designed to distribute the embedding 
+matrix across multiple devices by dividing it along the vocabulary dimension. This enables efficient training of 
+large-scale models with embeddings that exceed single-device memory limits. 
+
+Key Components:
+    - VocabParallelEmbedding: 
+        A parallelized `torch.nn.Embedding` layer that partitions the embedding weights across devices. 
+        This class modifies the embedding's internal representation to handle distribution across multiple 
+        tensor parallel devices and ensures correct parameter initialization and distribution.
+
+Features:
+    - Vocabulary partitioning: The embedding matrix is split across the vocabulary dimension, with each 
+      device handling a subset of the total embeddings.
+    - Efficient gradient synchronization: Gradients are aggregated across devices using differentiable 
+      collective communication operations.
+    - Meta information modification: Updates metadata of embedding weights to handle parameter initialization 
+      and tracking of the parallelization strategy.
+    
+Usage:
+    This class is instantiated by replacing an existing `torch.nn.Embedding` layer in a model during the 
+    parallelization setup and is integrated into the overall parallelism framework.
+    
+Imports:
+    - torch: PyTorch core library for tensor computations.
+    - torch.distributed: For handling distributed process groups and communication.
+    - torch.nn: Provides the base `torch.nn.Module` class and neural network layers.
+    - torch.nn.functional: Provides functional operations like embedding lookups.
+    - core, distributed, utils: Internal modules for handling parallel execution contexts, distributed 
+      communication, and utility functions.
+
+"""
+
 import torch
 import torch.distributed as dist
 import torch.nn as nn

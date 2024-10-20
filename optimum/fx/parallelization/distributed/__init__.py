@@ -1,17 +1,21 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module provides distributed operations tailored for parallel execution within
+a model's graph. These operations are essential for efficient data distribution and
+aggregation across multiple devices (such as GPUs) in a distributed setup, and they
+are differentiable, meaning they integrate smoothly with the backpropagation process.
+
+The functions included allow for seamless gathering, reducing, scattering, and identity
+operations across distributed processes, ensuring correct gradient propagation in training.
+
+Exports:
+    - differentiable_all_gather: Collects tensors from multiple devices while maintaining gradient flow.
+    - differentiable_all_reduce_sum: Sums tensors from multiple devices and supports backpropagation.
+    - differentiable_identity: A differentiable identity operation, typically used in distributed contexts.
+    - differentiable_scatter: Distributes input data across devices, supporting gradient propagation.
+    - scatter: Standard operation to distribute data across devices without gradients.
+
+"""
+
 from .dist_ops import (
     differentiable_all_gather,
     differentiable_all_reduce_sum,

@@ -1,15 +1,22 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module initializes the operation registry and handlers for parallelization.
+
+It provides:
+    - `REGISTRY`: A registry mapping operations (such as PyTorch functions or layers) to their respective handlers
+      responsible for propagating parallelization strategies during execution.
+    - `FallbackParallelAxisPropagateHandler`: A fallback handler that is used for operations without specialized
+      handlers, ensuring that parallelization propagation can still occur with a default behavior.
+
+These components are essential for defining how different operators propagate their parallelization axes within the
+parallelized computation graph.
+
+Modules:
+    - `op_handlers.py`: Contains the core definitions for handling parallel axis propagation for different
+      operators.
+
+Exports:
+    - `REGISTRY`: The registry object that maps supported operations to their handlers.
+    - `FallbackParallelAxisPropagateHandler`: A fallback handler used when no specific handler exists for an operation.
+"""
+
 from .op_handlers import REGISTRY, FallbackParallelAxisPropagateHandler

@@ -1,17 +1,41 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module defines parallelized linear layers for distributed training. It splits linear operations across 
+multiple devices using both column and row parallelism to improve memory efficiency and computational performance 
+in large-scale models. These custom linear layers replace standard PyTorch linear layers during the parallelization 
+process and support gradient synchronization across devices.
+
+Key Components:
+    - ColumnParallelLinear: 
+        A linear layer that splits the weight matrix along its output (column) dimension, distributing the matrix 
+        across multiple devices. The input remains shared, but the output can be gathered back for use if required.
+
+    - RowParallelLinear: 
+        A linear layer that splits the weight matrix along its input (row) dimension. In this case, the input is 
+        also partitioned, with each device processing its respective portion.
+
+Features:
+    - Parameter partitioning: Linear layers are partitioned either along the row or column dimensions, distributing 
+      the workload across devices while maintaining gradient synchronization.
+    - Metadata updates: The meta information of the weight parameters is modified to reflect the parallelization 
+      scheme, ensuring correct initialization, loading, and processing.
+    - Optional output gathering: For `ColumnParallelLinear`, the option to gather outputs back after processing 
+      across devices.
+    - Gradient synchronization: Uses differentiable collective communication operations to ensure gradients are 
+      aggregated across devices.
+
+Usage:
+    These classes are instantiated during the parallelization process to replace existing `torch.nn.Linear` layers, 
+    enabling efficient distributed training of large models.
+
+Imports:
+    - torch: PyTorch core library for tensor computations.
+    - torch.nn: Provides the base `torch.nn.Module` class and neural network layers.
+    - torch.nn.functional: Provides functional operations like matrix multiplication.
+    - torch.distributed: For handling distributed process groups and communication.
+    - core, distributed, utils: Internal modules for handling parallel execution contexts, distributed communication, 
+      and utility functions.
+"""
+
 import torch
 import torch.distributed as dist
 import torch.nn as nn

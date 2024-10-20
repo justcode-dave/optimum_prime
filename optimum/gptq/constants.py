@@ -1,16 +1,30 @@
-#  Copyright 2023 The HuggingFace Team. All rights reserved.
+# coding=utf-8
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+# GPTQ Constants
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+# This module defines constant values and patterns that are used across the GPTQ (Quantization) package for
+# configuring and handling model transformations. These constants ensure consistency and reduce the need for
+# hardcoded values when working with sequence lengths, model architecture patterns, and configuration files
+# related to GPTQ-based quantization.
 #
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Constants:
+# - `SEQLEN_KEYS_TRANFORMERS`: List of sequence length keys commonly found in transformer-based models. These keys
+#   are used to identify and manipulate sequence-related parameters such as the maximum number of positions a model
+#   can handle.
+#
+# - `BLOCK_PATTERNS`: List of common layer/block patterns within transformer models. This is useful for identifying
+#   key architectural components during model parsing or transformation.
+#
+# - `GPTQ_CONFIG`: The default filename for the GPTQ quantization configuration file. This file contains settings
+#   specific to quantizing a given model.
+#
+# Example Usage:
+#
+# ```python
+# from .constants import SEQLEN_KEYS_TRANFORMERS, BLOCK_PATTERNS, GPTQ_CONFIG
+# # Access predefined sequence length keys and layer patterns for transformation.
+# ```
+#
 
 SEQLEN_KEYS_TRANFORMERS = ["max_position_embeddings", "seq_length", "n_positions"]
 BLOCK_PATTERNS = [

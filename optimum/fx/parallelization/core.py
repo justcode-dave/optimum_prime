@@ -1,17 +1,27 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module contains the core classes and data structures that manage and handle 
+parallel execution contexts and configurations for model parallelization in the 
+`optimum.fx` framework. It defines essential abstractions to support slicing, 
+parameter metadata, and execution contexts required for distributed parallel 
+execution of models.
+
+Classes:
+    - `HashableSlice`: A slice that can be used as a hashable object for slicing tensors along specific axes.
+    - `ParameterSlice`: Represents a slice of a parameter tensor, supporting slicing along a specific axis.
+    - `ParameterMeta`: Stores metadata about model parameters, including whether they are tied, parallelized, or need initialization.
+    - `ParallelExecutionCtx`: The runtime execution context for model parallelization, holding information 
+      about the process group, device, parameter cache, and optimization status during execution.
+    - `Config`: Holds static configurations that guide parallelization, including whether linting and recompilation 
+      should be done after passes, weight initialization methods, and parallelization strategies.
+
+Key Concepts:
+    - **Parallel Execution Context**: Defines the context for distributed execution, including device assignment, 
+      parallel layer caching, and handling of recompilation during runtime.
+    - **Parameter Slicing**: Enables the slicing of parameters (weights) across different devices for model parallelism.
+    - **Weight Initialization**: Provides control over how model weights are initialized when loading from disk 
+      or when creating new parameters.
+"""
+
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple

@@ -1,17 +1,41 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+Operation Handlers for Parallel Axis Propagation in Distributed Parallelism.
+
+This module provides handlers that define how parallel axes are propagated through various operations (unary, 
+binary, reduction, view-like operations, and more) within a computation graph. These handlers are essential 
+for enabling model parallelism in distributed systems, particularly when working with large neural networks 
+(e.g., transformers).
+
+Core Functionality:
+    - Parallel axis propagation ensures that tensor operations occurring in parallelized parts of a model maintain 
+      consistency in axis alignment across processes. It helps manage the way tensors are split and recombined 
+      during distributed training.
+    - Handlers are responsible for determining how the parallel axis of a tensor is affected by various operations. 
+      For example, a unary operation like `relu` will maintain the same axis, while a binary operation like `add` 
+      must consider the alignment of both operands.
+    - Operations like reshaping, slicing, or reductions need to modify or propagate axis information, ensuring that 
+      the distributed computation remains correct.
+
+Components:
+    - `Registry`: A class responsible for registering handlers for specific PyTorch operations (ATen ops). 
+      Handlers can be registered for unary, binary, reduction, or more complex operations.
+    - `OpParallelAxisPropagateHandler`: The base class for all handlers that provides an interface for extracting 
+      and propagating parallel axis information.
+    - Handlers for specific operations (e.g., unary, binary, reduction, view-like) that dictate how parallel 
+      axis information is propagated through the graph.
+
+Key Use Cases:
+    - Parallelism in transformers and other deep learning models, where computations are split across multiple 
+      devices or processes.
+    - Ensuring correct tensor partitioning in operations like matrix multiplication, cross entropy, embeddings, 
+      and more, which are often used in large-scale models.
+
+This module is automatically used during graph transformations for parallelism. Each node in the computation 
+graph is analyzed, and its associated handler propagates the parallel axis information based on the operation 
+type.
+
+"""
+
 from abc import abstractmethod
 from typing import Any, List, Optional
 

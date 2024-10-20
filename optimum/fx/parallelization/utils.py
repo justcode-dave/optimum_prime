@@ -1,17 +1,64 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+Utilities for Parallelization, Parameter Management, and Model Initialization in FX-Based Parallelism
+
+This module provides utility functions and helper classes that facilitate parallel execution, weight initialization, 
+parameter handling, and efficient model loading. These utilities work in conjunction with FX-based model parallelization 
+and decomposition processes, ensuring that models are optimized for distributed execution and efficient memory usage.
+
+Functions:
+    - ensure_divisibility: Ensures that a numerator is divisible by a given denominator, raising an error otherwise.
+    - is_activation: Determines if a given node is a leaf activation module.
+    - is_linear: Determines if a given node is a linear layer (`nn.Linear`).
+    - is_embedding: Determines if a given node is an embedding layer (`nn.Embedding`).
+    - is_shape_consumer: Identifies nodes that consume tensor shapes (e.g., view, reshape).
+    - is_output: Identifies whether a node represents the output of the graph.
+    - is_shape_generator: Identifies nodes that generate tensor shapes.
+    - is_cross_entropy: Determines if a node is performing cross-entropy loss.
+    - is_cross_entropy_parallel_compatible: Determines if a cross-entropy node is compatible with parallelization.
+    - stable_topological_sort: Performs a stable topological sort on the FX graph nodes.
+    - meta_init: A decorator to initialize weights on a meta device for memory-efficient model construction.
+    - meta_aware_linear_forward: Meta-aware `forward` function for `nn.Linear`.
+    - meta_aware_embedding_forward: Meta-aware `forward` function for `nn.Embedding`.
+    - initialize_parameter_meta: Initializes metadata for model parameters for use in parallel execution.
+    - move_model_to_device: Moves the model's parameters and buffers to a specific device.
+    - download_model_from_hf: Downloads model weights, index, and config files from the Hugging Face Hub.
+    - convert_bin_to_safetensors: Converts standard PyTorch `.bin` files to `safetensors` format.
+    - try_collect_weight_map: Collects a mapping of model weights from files stored locally or downloaded from the Hugging Face Hub.
+
+Classes:
+    - MetaAwareMethodsPatcher: Patches `__init__` and `forward` methods for meta-device aware initialization and execution 
+      for memory-efficient model construction.
+    - DisabledTqdm: A version of `tqdm` with progress bars disabled, useful when running operations silently.
+
+Details:
+    - **Meta Devices**: This module includes special handling for meta devices, which allow for models to be initialized 
+      without actually allocating memory for tensors, enabling large-scale model construction with minimal memory usage.
+    
+    - **Model Parallelism**: The utility functions are designed to assist with model parallelization, particularly 
+      for distributed setups where large models are split across multiple devices (e.g., GPUs).
+
+    - **Weight Management**: Functions such as `initialize_parameter_meta` and `move_model_to_device` help with parameter 
+      initialization and movement, ensuring that parameters are correctly partitioned and placed on appropriate devices 
+      for distributed training.
+
+    - **File and Lock Management**: Utilities such as `get_lock` and `download_model_from_hf` handle file locking 
+      and downloading models from the Hugging Face Hub, ensuring that multiple processes can access shared resources 
+      safely.
+
+Example Usage:
+    ```python
+    from utils import move_model_to_device, initialize_parameter_meta
+    import torch.nn as nn
+
+    # Initialize model and move it to device
+    model = nn.Linear(10, 10)
+    move_model_to_device(model, device="cuda:0")
+
+    # Initialize parameter metadata for parallelism
+    initialize_parameter_meta(model)
+    ```
+"""
+
 import fnmatch
 import glob
 import hashlib

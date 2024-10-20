@@ -1,16 +1,17 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module provides functionalities to enable and manage model parallelization 
+within the `optimum.fx` framework. It includes key tools to facilitate the 
+parallelization of models and backends, ensuring efficient execution across 
+multiple devices or distributed systems.
+
+Key Components:
+    - `parallelize_backend`: A function to parallelize the backend operations.
+    - `parallelize_model`: A function to enable parallelization of models across
+      multiple devices or nodes.
+    - `Config`: A configuration class to manage and store parallelization settings.
+    - `ParallelExecutionCtx`: A context manager to handle parallel execution, 
+      ensuring correct resource allocation and synchronization across devices.
+"""
+
 from .api import parallelize_backend, parallelize_model
 from .core import Config, ParallelExecutionCtx

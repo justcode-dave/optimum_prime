@@ -1,16 +1,22 @@
-#  Copyright 2021 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+"""
+ONNX Graph Transformations for Model Optimization.
+
+This module provides a set of transformations and utilities to optimize and clean ONNX models.
+These transformations are mainly aimed at reducing redundant data, merging models, and fixing broken
+nodes to enhance inference performance and model compatibility.
+
+Key Features:
+    - `remove_duplicate_weights`: Identifies and removes duplicate weights from an ONNX model by sharing identical weight tensors.
+    - `remove_duplicate_weights_from_tied_info`: Removes duplicate ONNX initializers based on weight-tying information.
+    - `replace_atenops_to_gather`: Replaces broken ATenOp nodes in ONNX models with Gather nodes.
+    - `check_and_save_model`: Verifies the ONNX model's structure and saves it to a specified path.
+    - `merge_decoders`: Merges a decoder model and a decoder-with-past model into a single ONNX model using conditional logic.
+    - `cast_slice_nodes_inputs_to_int32`: Casts `Slice` node inputs from int64 to int32 where possible.
+
+The module also provides helper functions to ensure consistency and correctness of the transformations,
+such as deduplicating weights, unifying ONNX outputs, and managing tensor types.
+"""
+
 import copy
 import os
 from pathlib import Path

@@ -1,16 +1,30 @@
-#  Copyright 2023 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+"""
+Utility Functions for ONNX Model Transformations and Deduplication.
+
+This module provides a set of helper functions to facilitate various ONNX model transformations. 
+It focuses on tasks such as identifying and removing duplicate weights, handling ONNX node inputs, 
+and managing initializer deduplication across models. The goal is to optimize ONNX model size and performance 
+by reducing redundancy and standardizing certain aspects of the model's structure.
+
+Main features:
+    - **Duplicate Weight Deduplication**: Identify and remove duplicate initializers (weights) from one or more models.
+    - **Name Replacement**: Replace input and output names across ONNX models to standardize references to shared weights.
+    - **Model Merging**: Merge multiple ONNX models, ensuring compatibility in terms of input/output shape and data type.
+    - **Gather and MatMul Optimization**: Optimize Gather and MatMul operations by eliminating unnecessary transpositions 
+      or duplications of initializers.
+    - **Casting Optimization**: Cast tensor initializers (from int64 to int32) to reduce model size and align with 
+      ONNX runtime requirements.
+    - **Tied Weights Handling**: Identify and manage tied weights in models that share the same parameters, 
+      allowing for better memory and computational efficiency.
+
+The utility functions in this file support key transformations required during ONNX model optimization 
+for deployment in production environments or hardware acceleration frameworks.
+
+Example usage:
+    These functions can be used during the export of ONNX models to optimize the model for deployment. 
+    Common transformations include weight deduplication, casting inputs, and preparing models for different execution environments.
+"""
+
 
 import hashlib
 from collections import defaultdict

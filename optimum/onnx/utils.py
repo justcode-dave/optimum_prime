@@ -1,16 +1,23 @@
-#  Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+"""
+Utility Functions for Handling ONNX External Data and Model Operations.
+
+This module provides utilities to manage ONNX models, especially focusing on models that make use of external data.
+It includes functions for extracting, verifying, and managing external data paths from ONNX models, as well as utility
+methods to check the presence of specific inputs in models.
+
+Main features:
+    - **External Data Management**: Functions to retrieve paths to external data referenced by the ONNX model, check if a model uses external data, and help in managing and copying the necessary external files.
+    - **Input Checking**: Utility to check whether a specific input exists in the ONNX model, useful for model verification and preparation tasks.
+    - **Model Loading without External Data**: Methods to load ONNX models while ignoring external data, providing flexibility for custom manipulation of model tensors.
+    - **Helper for ONNX Initializers**: Functionality to assist with accessing and handling ONNX initializer tensors.
+
+These utilities are designed to facilitate working with large ONNX models that may have external data dependencies and ensure smooth handling of ONNX inputs and graph nodes.
+
+Example usage:
+    These functions are typically used when preparing ONNX models for deployment, where external data may need to be managed or verified, 
+    or when ensuring that models have the correct input configuration for specific tasks or hardware accelerators.
+"""
+
 
 from pathlib import Path
 from typing import List, Tuple, Union

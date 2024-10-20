@@ -1,17 +1,50 @@
-# coding=utf-8
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module defines loss functions and utilities for distributed parallelism, focusing on cross-entropy loss 
+optimized for tensor parallelism. It includes custom loss implementations that efficiently handle large-scale 
+vocabulary embeddings and logits across multiple devices using distributed processes.
+
+Key Components:
+    - _ShardedCrossEntropy:
+        A custom autograd function for sharded cross-entropy, which distributes the computation of cross-entropy 
+        loss across multiple devices in parallel. This function ensures correct loss computation by managing 
+        logits, applying masks, and performing collective operations like `all_reduce` to synchronize results 
+        across the devices.
+
+    - sharded_cross_entropy:
+        A wrapper function to easily apply the `_ShardedCrossEntropy` autograd function for distributed 
+        cross-entropy loss calculation. It handles communication between devices and ensures that logits and 
+        targets are synchronized properly.
+
+    - sharded_cross_entropy_wrapper_fn:
+        A function that wraps `sharded_cross_entropy` to provide additional flexibility in defining reduction 
+        modes (`mean`, `sum`, etc.), although it currently does not support weighted loss, label smoothing, or 
+        ignore_index.
+
+    - VocabParallelCrossEntropyLoss:
+        A `torch.nn.Module` class that extends the standard cross-entropy loss for use in distributed tensor 
+        parallel training. This loss is specifically designed to work with models where the vocabulary is 
+        sharded across multiple devices, making it memory efficient for very large vocabularies.
+
+Features:
+    - Cross-entropy computation across sharded vocabularies, distributing both logits and targets to multiple 
+      devices.
+    - Efficient parallelism: The loss is computed in parallel, ensuring scalability and synchronization across 
+      devices using collective communication.
+    - Custom autograd: `_ShardedCrossEntropy` ensures that gradients are properly computed and propagated across 
+      all devices during backpropagation.
+
+Usage:
+    These components are used during distributed training to replace the standard cross-entropy loss, 
+    providing the same functionality with improved performance for models trained across multiple GPUs or 
+    processes.
+
+Imports:
+    - torch: PyTorch core library for tensor computations and autograd functions.
+    - torch.nn: Provides base classes for neural network layers and loss functions.
+    - torch.distributed: Distributed communication primitives for synchronization.
+    - core, utils: Internal modules for handling parallel execution contexts and utilities for distributed training.
+"""
+
 from functools import wraps
 from typing import Optional
 
