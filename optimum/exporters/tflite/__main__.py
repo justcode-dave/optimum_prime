@@ -1,18 +1,33 @@
-# coding=utf-8
-# Copyright 2023 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Entry point to the optimum.exporters.tflite command line."""
+"""
+Main entry point for the Hugging Face Optimum TensorFlow Lite (TFLite) exporter.
+
+This script provides a command-line interface (CLI) for exporting Hugging Face models to the TensorFlow Lite format, 
+which is designed for optimized inference on edge devices such as mobile phones and embedded systems. The script 
+facilitates exporting a model, configuring quantization options, and validating the exported model to ensure it 
+produces consistent outputs.
+
+Key functionalities include:
+- **Model Export**: Leverages the `optimum.exporters.tflite` module to export models from the Hugging Face Transformers 
+  library to the TFLite format, supporting a variety of tasks (e.g., text classification, image classification, 
+  and more).
+- **Quantization Support**: Optional quantization of the exported model using TensorFlow Lite quantization techniques, 
+  allowing users to optimize models for reduced size and faster inference with minimal accuracy degradation.
+- **Validation**: Verifies the outputs of the exported TFLite model against the original model, using user-specified 
+  or default tolerance levels (atol) to ensure output consistency.
+  
+Arguments parsed through the command-line interface include:
+- Model path, task type, export output directory, quantization approach, calibration dataset, and tolerance (atol) 
+  for validation.
+- The script also allows automatic task inference when exporting models from the Hugging Face Model Hub.
+
+Exception handling is built-in to manage different types of errors such as shape mismatches, numerical tolerance 
+issues, or other validation problems, with clear log messages indicating the status of the export process.
+
+Execution:
+To run the export process from the command line:
+```bash
+python -m optimum.exporters.tflite --model <MODEL_PATH> --task <TASK> --output <OUTPUT_PATH> [options]
+"""
 
 from argparse import ArgumentParser
 

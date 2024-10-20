@@ -1,17 +1,38 @@
-# coding=utf-8
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+Model patcher module for ONNX export.
+
+This module is responsible for modifying the behavior of transformer and other deep learning models 
+to ensure compatibility with the ONNX (Open Neural Network Exchange) format. It addresses limitations 
+and inconsistencies that might arise during the export process by dynamically patching certain 
+methods and operations of models. The patching process is especially important for models that 
+require special handling of past key values, attention mechanisms, or other custom behaviors during 
+export.
+
+Key features of this module include:
+- **Patching Mechanism**: Classes and functions to patch model operations, including forward 
+  methods, attention masks, and other operations that need to behave differently during the ONNX export.
+- **Model-specific Patchers**: Several classes tailored for specific models (e.g., Falcon, CLIP, SpeechT5, etc.) 
+  that handle unique aspects of their architectures or requirements for ONNX compatibility.
+- **Attention Mask Handling**: Functions to correctly generate and process causal attention masks, 
+  particularly in models that require causal masking for autoregressive tasks or efficient inference.
+- **Past Key Values Support**: Dynamic patching of models to handle past key values in transformer-based 
+  models, enabling efficient export for tasks such as text generation.
+- **Custom Operations**: Patching specific methods to replace operations that cannot be exported 
+  directly to ONNX or need special handling (e.g., dropout, SDPA).
+
+This module ensures that models can be exported seamlessly to ONNX while retaining their core functionality 
+and maintaining compatibility with the ONNX runtime. It is critical for deploying Hugging Face models in 
+production environments that rely on ONNX for optimized inference performance.
+
+Classes and Functions:
+- `ModelPatcher`: Base class that applies and restores patches for ONNX export.
+- `Seq2SeqModelPatcher`, `FalconModelPatcher`, `WavLMModelPatcher`, etc.: Specialized patchers for specific model architectures.
+- `patch_everywhere`: Utility function to patch all occurrences of a given attribute across loaded modules.
+- `override_arguments`: Helper function to override arguments during the model's forward pass for ONNX export.
+- `PatchingSpec`: Data class for specifying the details of a patch, including the operation to patch and the custom behavior to apply.
+"""
+
+
 import dataclasses
 import functools
 import inspect

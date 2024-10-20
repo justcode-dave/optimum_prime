@@ -1,18 +1,33 @@
-# coding=utf-8
-# Copyright 2023 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""TensorFlow Lite configuration base classes."""
+"""
+Base classes for TensorFlow Lite (TFLite) export configuration.
+
+This module defines essential base classes and structures for exporting models from the Hugging Face Transformers 
+library to TensorFlow Lite format. It includes configuration classes, quantization options, and methods to handle 
+model export tasks, as well as creating input specifications and signatures for TFLite models.
+
+Key Classes:
+- `TFLiteConfig`: An abstract base class providing metadata and configuration for exporting models to TFLite, 
+  including input/output specifications, dummy input generation, and quantization support. Each specific model type 
+  will subclass this to define its export behavior.
+- `TFLiteQuantizationConfig`: A class that defines quantization parameters for the TFLite model export process, 
+  including quantization approaches (e.g., INT8, FP16), calibration datasets, and input/output data types.
+- `QuantizationApproach`: Enum for different quantization methods supported by TensorFlow Lite (e.g., dynamic or static INT8, FP16).
+
+Key Functionalities:
+- **Mandatory Axes Validation**: Ensures that mandatory input dimensions such as batch size and sequence length 
+  are provided for the export process.
+- **Quantization Support**: Includes configurations to enable different quantization methods (e.g., INT8, FP16) 
+  for optimized model performance on edge devices.
+- **Model Input and Output Specification**: Generates dummy inputs and defines the expected input/output format for 
+  exported models. This is critical for defining TFLite models' behavior when used in mobile or embedded environments.
+- **Export Signatures**: Defines the signatures (input/output mappings) that are used for inference when the model 
+  is exported to a `tf.SavedModel` format for later conversion to TFLite.
+
+This module serves as the foundational layer for TensorFlow Lite export functionality in Hugging Face's Optimum library, 
+allowing for easy conversion of models to be deployed on mobile and embedded devices using the TensorFlow Lite format.
+
+"""
+
 
 from abc import ABC, abstractmethod
 from ctypes import ArgumentError

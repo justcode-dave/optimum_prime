@@ -1,22 +1,34 @@
-# coding=utf-8
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Utilities for ONNX configuration, conversion, and export
+
+"""
+This module provides lazy-loaded utilities to handle ONNX exportation of models within the Hugging Face ecosystem.
+It defines structures and methods that facilitate configuring and converting model architectures to the ONNX format.
+
+The ONNX export functionality is designed to improve the deployment and integration of transformer-based models
+by converting them into a format that can be executed in a broad range of environments, including mobile devices,
+cloud platforms, and edge applications.
+
+The key functionalities include:
+- Configuring the model for export to ONNX, including loss functions, attention mechanisms, and sequence-to-sequence support.
+- Conversion of pre-trained transformer models into ONNX format using specified configurations.
+- Validation of model outputs to ensure consistency and correctness after conversion.
+- Support for exporting models designed for text generation, text encoding, and other tasks specific to transformer models.
+- Providing utilities to extract submodels (e.g., encoder-decoder) from more complex architectures for export.
+
+Components:
+- `base`: Contains the base classes and configurations used for exporting models to ONNX, such as `OnnxConfig`, `OnnxConfigWithLoss`, and others.
+- `config`: Provides specific configurations for different types of transformer models, including text decoders, encoders, and sequence-to-sequence models.
+- `convert`: Offers the core functions for exporting models to ONNX format, as well as functions to validate the exported models.
+- `utils`: Includes utility functions to facilitate model preparation for ONNX export, including support for various model types.
+- `__main__`: Command-line utilities for exporting models, intended to be run as standalone scripts for model export tasks.
+
+This module is designed to be lazily loaded, meaning that individual components are only loaded when they are accessed. 
+This reduces the initial load time and resource consumption when the full suite of utilities is not required.
+"""
 
 from typing import TYPE_CHECKING
 
 from transformers.utils import _LazyModule
-
 
 _import_structure = {
     "base": ["OnnxConfig", "OnnxConfigWithLoss", "OnnxConfigWithPast", "OnnxSeq2SeqConfigWithPast"],

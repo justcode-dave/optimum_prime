@@ -1,18 +1,24 @@
-# coding=utf-8
-# Copyright 2023 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""TensorFlow Lite model check and export functions."""
+"""
+TensorFlow Lite model conversion and validation functions.
+
+This module provides functions to export TensorFlow models to TensorFlow Lite (TFLite) format and validate the 
+resulting models by comparing the outputs of the reference model with the exported TFLite model. Additionally, 
+it supports quantization approaches to optimize the TFLite model for various hardware accelerators.
+
+Key Functions:
+- `export`: Converts a TensorFlow model to TFLite format. Handles the export process, including applying 
+   quantization if specified, and saves the TFLite model to disk.
+- `validate_model_outputs`: Validates the exported TFLite model by comparing its outputs against the original 
+   TensorFlow model, checking for matching shapes and values within a specified tolerance.
+- `prepare_converter_for_quantization`: Prepares the TFLite converter for quantization, which optimizes the 
+   model for hardware accelerators using techniques like INT8 or FP16 quantization.
+- `create_representative_dataset`: Generates a representative dataset for calibration during static 
+   quantization, allowing the model to fine-tune its quantization parameters based on real data samples.
+
+This module supports various quantization approaches such as dynamic and static INT8, FP16, and INT8x16 for 
+further model optimization. It also manages input preprocessing to ensure the calibration process for quantization 
+is done correctly.
+"""
 
 from pathlib import Path
 from tempfile import TemporaryDirectory

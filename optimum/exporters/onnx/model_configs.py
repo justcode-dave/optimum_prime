@@ -1,18 +1,47 @@
-# coding=utf-8
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Model specific ONNX configurations."""
+"""
+Model specific configurations for ONNX export.
+
+This module defines configuration classes for exporting various models to ONNX format. 
+These configurations include information about model inputs, outputs, dynamic axes, and 
+additional export-specific parameters. ONNX (Open Neural Network Exchange) is an open 
+standard format that enables interoperability between different deep learning frameworks 
+such as PyTorch, TensorFlow, and others, and facilitates model optimization and inference 
+on different hardware platforms.
+
+The configuration classes in this file are specific to different transformer architectures 
+and vision models, handling both encoder and decoder components where applicable. 
+These classes also allow for exporting models with support for optional features like 
+caching past key values (useful for efficient inference in autoregressive tasks), 
+handling different task types such as multiple-choice, sequence classification, text 
+generation, and more.
+
+Key features of this module include:
+- Definition of input and output tensor mappings for dynamic batch sizes, sequence lengths, 
+  and other dimensions required by specific models.
+- Compatibility with different ONNX operator sets (`opset`) based on model requirements.
+- Support for different types of inputs, including text, vision, audio, and multi-modal data.
+- Handling of model-specific behaviors such as the presence of position embeddings, attention 
+  masks, or token type IDs.
+- Dummy input generation for model validation and export debugging.
+- Model patching to ensure smooth export to ONNX format by applying fixes specific to 
+  certain architectures (e.g., Falcon, GPT, Speech models, etc.).
+  
+This file is essential for users looking to export transformer and vision models from 
+the Hugging Face ecosystem into ONNX format, making it easier to deploy those models 
+to production environments with lower latency and optimized inference performance.
+
+Modules and Classes:
+- OnnxConfig: Base class for all ONNX configurations.
+- OnnxConfigWithPast: Inherits from OnnxConfig, supports past key values for faster 
+  autoregressive inference.
+- OnnxSeq2SeqConfigWithPast: Specialized configuration for sequence-to-sequence models with 
+  past key value caching support.
+- Specific ONNX configuration classes for each supported model architecture (e.g., BertOnnxConfig, 
+  GPT2OnnxConfig, ViTOnnxConfig, WhisperOnnxConfig, etc.).
+
+"""
+
+
 import random
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union

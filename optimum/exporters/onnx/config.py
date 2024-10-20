@@ -1,18 +1,39 @@
-# coding=utf-8
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Common ONNX configuration classes that handle most of the features for building model specific configurations."""
+"""
+This module contains common ONNX configuration classes that handle various types of models, including text, vision, 
+and audio architectures. These configurations are used to specify how models should be exported to ONNX format, 
+defining inputs, outputs, and handling optional features such as past key values for autoregressive models.
+
+The configurations in this module build upon the base ONNX configurations to support specific model types like:
+- Text encoders and decoders.
+- Sequence-to-sequence models.
+- Multi-modal models combining text and vision.
+- Audio models and audio-to-text models.
+
+Key Classes:
+- **TextEncoderOnnxConfig**: Configuration for text encoder architectures.
+- **TextDecoderOnnxConfig**: Configuration for text decoder architectures with support for past key-value caching.
+- **TextSeq2SeqOnnxConfig**: Configuration for sequence-to-sequence text models, such as transformer-based models.
+- **VisionOnnxConfig**: Configuration for vision-based architectures.
+- **TextAndVisionOnnxConfig**: Configuration for multi-modal models combining text and vision.
+- **AudioOnnxConfig**: Configuration for audio models.
+- **AudioToTextOnnxConfig**: Configuration for audio-to-text models, such as speech recognition models.
+- **EncoderDecoderBaseOnnxConfig**: A base configuration for encoder-decoder architectures.
+
+Each class provides methods to:
+- Define inputs and outputs specific to the model architecture.
+- Generate dummy inputs for model validation.
+- Handle dynamic axes for input sequences and past key-value states.
+- Support post-processing of exported models, such as merging decoders with and without past key-values.
+
+These configurations are intended to be used within the ONNX export pipeline to convert various model architectures 
+to an ONNX format suitable for deployment in environments like ONNX Runtime.
+
+Usage:
+- Use the appropriate configuration class for the model architecture being exported.
+- Customize the configuration by overriding or extending methods to handle specific input-output behaviors or model 
+  export requirements.
+"""
+
 
 from collections import OrderedDict
 from pathlib import Path

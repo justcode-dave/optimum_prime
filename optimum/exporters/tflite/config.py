@@ -1,21 +1,22 @@
-# coding=utf-8
-# Copyright 2023 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """
-Common TensorFlow Lite configuration classes that handle most of the features for building model specific
-configurations.
+TensorFlow Lite (TFLite) configuration classes for specific model architectures.
+
+This module defines TFLite configuration classes for different types of model architectures, such as text encoders 
+and vision models. These classes inherit from the `TFLiteConfig` base class and specialize the configuration 
+and input generation process for specific model types.
+
+Key Classes:
+- `TextEncoderTFliteConfig`: Handles the configuration for text-based encoder models, specifying necessary axes 
+  such as batch size and sequence length. It also sets up the dummy input generators for text-based models.
+- `VisionTFLiteConfig`: Manages the configuration for vision-based models, specifying required axes like 
+  batch size, number of channels, width, and height. It includes dummy input generators tailored for vision models.
+
+These configuration classes make it easier to define and export models with the correct input/output specifications, 
+handling essential parameters such as mandatory input axes and providing suitable input generators for their 
+respective architectures.
+
 """
+
 
 from ...utils import DummyTextInputGenerator, DummyVisionInputGenerator, logging
 from .base import TFLiteConfig

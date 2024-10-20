@@ -1,16 +1,14 @@
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module defines the `EnvironmentCommand` for the Optimum command-line interface (CLI).
+
+The `EnvironmentCommand` gathers and displays information about the current environment, including:
+- The versions of `optimum`, `transformers`, `huggingface_hub`, and the Python interpreter.
+- Details about the platform being used (e.g., OS and Python version).
+- Information on installed machine learning frameworks like PyTorch and TensorFlow, along with their GPU availability.
+
+This command is useful for debugging and reporting issues as it provides a concise snapshot of the environment setup.
+"""
+
 
 import platform
 

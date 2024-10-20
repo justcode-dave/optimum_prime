@@ -1,18 +1,16 @@
 # coding=utf-8
-# Copyright 2023 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Utilities related to error handling."""
+"""
+This module provides utility classes for error handling within the optimum-export framework.
+
+The following custom exceptions are defined:
+- `ShapeError`: Raised when tensor shapes are incompatible or do not match expected values.
+- `AtolError`: Raised when the absolute tolerance of numerical comparison is exceeded.
+- `OutputMatchError`: Raised when model outputs do not match expected values.
+- `NumberOfInputsMatchError`: Raised when the number of inputs to the model does not match the expected number.
+- `NumberOfOutputsMatchError`: Raised when the number of outputs from the model does not match the expected number.
+- `MinimumVersionError`: Raised when the version of a library or framework does not meet the minimum required version.
+"""
+
 
 
 class ShapeError(ValueError):

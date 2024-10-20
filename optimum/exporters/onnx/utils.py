@@ -1,18 +1,35 @@
-# coding=utf-8
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Utility functions."""
+"""
+Utility functions for model export and ONNX compatibility.
+
+This module provides various helper functions and classes to facilitate the export of machine learning models, 
+particularly Hugging Face models, to the ONNX (Open Neural Network Exchange) format. It ensures that necessary 
+runtime requirements are met, manages model configuration, and adapts model components for ONNX export.
+
+Key functionalities provided by this module:
+- **ONNX Runtime Checks**: Functions to verify the installation and version requirements of ONNX Runtime.
+- **Device and Data Type Utilities**: Methods for recursively moving tensors to specific devices or casting them 
+  to specific data types, ensuring compatibility across different hardware (CPU, GPU) and data precision levels.
+- **Session Management**: A wrapper class (`PickableInferenceSession`) for ONNX Runtime inference sessions, 
+  making them compatible with Python’s pickling mechanism for efficient serialization and distributed processing.
+- **Model Export Configuration**: Functions to retrieve submodels and export configurations for a wide variety 
+  of transformer and diffusion models, including encoder-decoder models, diffusion pipelines, and SAM models.
+- **Model Type Handling**: Includes a predefined set of model types that require position IDs during inference 
+  or export, ensuring correct model behavior when exported to ONNX.
+
+This module is critical for the smooth export of transformer-based models and diffusion models to ONNX, enabling 
+optimized and scalable inference in production environments. It provides essential runtime checks and utility 
+functions required for the export process while handling common issues like device placement, data type conversions, 
+and model-specific export logic.
+
+Classes and Functions:
+- `check_onnxruntime_requirements`: Ensures that the ONNX Runtime is installed and meets version requirements.
+- `recursive_to_device`: Recursively moves tensors to the specified device (CPU or GPU).
+- `recursive_to_dtype`: Recursively converts tensors to the specified data type.
+- `PickableInferenceSession`: A wrapper for making ONNX Runtime inference sessions serializable with Python pickling.
+- Model export utility functions (e.g., `get_diffusion_models_for_export`, `get_sam_models_for_export`): Retrieve 
+  models and their export configurations for various architectures.
+"""
+
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 

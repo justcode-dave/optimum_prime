@@ -1,18 +1,22 @@
-# coding=utf-8
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Pipelines running different backends."""
+"""
+This module defines the base functionality for setting up pipelines that run on different backends like ONNX Runtime 
+(ORT) and BetterTransformer. It provides methods to load models, tokenizers, and feature extractors for various tasks, 
+and integrates with the Hugging Face `transformers` library.
+
+It includes:
+    - `ORT_SUPPORTED_TASKS`: Defines the tasks that are supported by the ONNX Runtime backend.
+    - `MAPPING_LOADING_FUNC`: Maps accelerator types (e.g., "ort", "bettertransformer") to the corresponding 
+      loading functions.
+    - `load_bettertransformer`: Loads a BetterTransformer-optimized model for faster inference.
+    - `load_ort_pipeline`: Loads an ONNX Runtime pipeline for tasks such as feature extraction, text generation, 
+      and more.
+    - `pipeline`: The main function for creating a pipeline that supports either ONNX Runtime or BetterTransformer 
+      accelerators.
+    
+This module facilitates seamless model inference for a wide range of tasks like text classification, question answering, 
+image classification, and speech recognition, while allowing the use of hardware-optimized runtimes.
+"""
+
 
 from typing import Any, Dict, Optional, Union
 

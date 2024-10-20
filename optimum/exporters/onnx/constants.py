@@ -1,17 +1,18 @@
-# coding=utf-8
-# Copyright 2023 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+This module defines constants used throughout the ONNX export process for Hugging Face models.
+
+These constants include:
+- **File size limits**: For managing external data formats during the ONNX export process.
+- **Model component names**: Standard names for encoder and decoder parts of models during export.
+- **Model architecture lists**:
+  - **Unpickable architectures**: A list of models that cannot be exported due to specific technical constraints.
+  - **Architectures unsupported for ONNX export with SDPA**: A list of model architectures where the 
+    ONNX export process is not supported due to limitations with specific attention mechanisms.
+
+These constants help ensure consistency and prevent issues during the ONNX export process for various model 
+architectures.
+"""
+
 
 # 2 GB
 EXTERNAL_DATA_FORMAT_SIZE_LIMIT = 2 * 1024 * 1024 * 1024

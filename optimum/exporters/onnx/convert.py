@@ -1,18 +1,14 @@
-# coding=utf-8
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""ONNX model check and export functions."""
+"""
+This module provides functions for exporting Hugging Face models to the ONNX format, validating
+the outputs of exported models, and ensuring compatibility between reference and ONNX models.
+
+It includes functionalities for:
+- **Exporting models**: Handles the export of PyTorch and TensorFlow models to ONNX, with optional post-processing and optimization.
+- **Validation**: Ensures the exported model's outputs match those of the reference model.
+- **Model splitting**: Supports exporting models in parts, such as encoder-decoder models, with options for merging components.
+- **Error handling**: Custom exceptions are defined for shape mismatches, output validation failures, and other errors during the export process.
+"""
+
 
 import copy
 import gc

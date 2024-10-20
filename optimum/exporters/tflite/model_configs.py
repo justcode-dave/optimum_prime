@@ -1,18 +1,22 @@
-# coding=utf-8
-# Copyright 2023 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Model specific TensorFlow Lite configurations."""
+"""
+Model-specific TensorFlow Lite configurations.
+
+This module defines TFLite configuration classes for various models such as BERT, DistilBERT, and ResNet. Each class 
+inherits from a base configuration class (e.g., `TextEncoderTFliteConfig`, `VisionTFLiteConfig`) and specifies 
+model-specific properties such as input names and supported quantization approaches.
+
+Key Classes:
+- `BertTFLiteConfig`: Defines the configuration for exporting BERT-based models to TFLite format, including supported 
+   inputs like `input_ids`, `attention_mask`, and `token_type_ids`.
+- `DistilBertTFLiteConfig`: Configuration for DistilBERT models, with reduced input requirements (no `token_type_ids`).
+- `ResNetTFLiteConfig`: Configuration for exporting ResNet-based vision models, specifying `pixel_values` as the input.
+- Additional classes for models such as `Electra`, `RoFormer`, `Deberta`, `XLMRoberta`, and more, each with 
+   their unique adjustments and quantization support.
+
+This module also handles limitations with certain quantization approaches (e.g., `INT8x16` not supported for certain 
+models due to unsupported operations like `CAST` and `NEG`) and custom input specifications for each model type.
+"""
+
 
 
 from typing import List

@@ -1,18 +1,37 @@
-# coding=utf-8
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Entry point to the optimum.exporters.onnx command line."""
+"""
+This module serves as the main entry point for exporting Hugging Face models into ONNX format using Optimum.
+
+The ONNX format is an open standard for machine learning model interoperability. By exporting Hugging Face models to 
+ONNX, the models can be deployed on various platforms that support ONNX, such as mobile devices, edge devices, or 
+cloud platforms that use ONNX runtime.
+
+Key functionalities include:
+- Exporting transformer models, diffusion models, and other supported architectures from the Hugging Face ecosystem to ONNX.
+- Supporting different model configurations, tasks, and optimizations during the export.
+- Validation of the exported ONNX models for accuracy, ensuring the ONNX model behaves as expected.
+- Handling tasks such as text generation, text classification, sequence-to-sequence tasks, and image generation, among others.
+
+Main components:
+- `main_export`: The primary function that exports a model from a Hugging Face repository or local directory to the ONNX format.
+  This function supports various parameters to fine-tune the export, including device type, optimization levels, framework type,
+  precision (fp32, fp16, bf16), task type, and ONNX opset versions.
+- `main`: The command-line interface (CLI) that parses user inputs and invokes the `main_export` function. This is designed to be 
+  the main function called when using the CLI interface to export models.
+- `parse_args_onnx`: A helper function for parsing command-line arguments, setting up the input options needed for ONNX export.
+
+Supported tasks:
+- Text classification
+- Text generation (including models with past key values)
+- Sequence-to-sequence tasks (e.g., translation)
+- Image generation (diffusion-based tasks such as Stable Diffusion)
+
+Usage example:
+-----------------
+You can use this module to export a model to ONNX format by running the following command:
+
+```bash
+python -m optimum.exporters.onnx --model gpt2 --output gpt2_onnx/
+"""
 
 import argparse
 import warnings
