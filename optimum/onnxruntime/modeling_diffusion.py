@@ -1,16 +1,66 @@
-#  Copyright 2023 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+"""
+This module provides classes for handling diffusion models in ONNX Runtime, specifically designed for 
+image generation tasks. The classes offer efficient inference for diffusion models using ONNX Runtime, 
+with support for various pipelines such as Stable Diffusion and Latent Consistency Models.
+
+Classes:
+
+1. **ORTStableDiffusionPipeline**:
+    - Base class for running Stable Diffusion models using ONNX Runtime.
+    - Attributes:
+        - `model`, `vae`, `unet`: Core components of the diffusion pipeline.
+        - `scheduler`: Handles the denoising schedule.
+        - `progress_bar`: A utility to track progress during inference.
+    - Methods:
+        - `__init__`: Initializes the ONNX Runtime session for the Stable Diffusion pipeline.
+        - `__call__`: Executes the diffusion process for image generation, utilizing the initialized model and scheduler.
+
+2. **ORTStableDiffusionImg2ImgPipeline**:
+    - Extends `ORTStableDiffusionPipeline` to support image-to-image generation, leveraging a source image as input.
+    - Attributes:
+        - Inherits all attributes from `ORTStableDiffusionPipeline`.
+    - Methods:
+        - `__call__`: Modifies the standard pipeline to include a starting image for image-to-image translation.
+
+3. **ORTStableDiffusionInpaintPipeline**:
+    - Specializes in inpainting tasks, allowing for image restoration or generation based on an input image and a mask.
+    - Attributes:
+        - Inherits all attributes from `ORTStableDiffusionPipeline`.
+    - Methods:
+        - `__call__`: Applies the inpainting process based on input and mask images.
+
+4. **ORTLatentConsistencyModelPipeline**:
+    - Implements the Latent Consistency Models (LCM) for generating consistent latent variables across multiple steps.
+    - Attributes:
+        - `latent_model`: The underlying model responsible for latent consistency.
+    - Methods:
+        - `__call__`: Executes the LCM-based generation, ensuring latent variable consistency across iterations.
+
+5. **ORTPipelineForImage2Image**:
+    - A generic pipeline for performing image-to-image transformations using ONNX Runtime.
+    - Attributes:
+        - Inherits attributes from the base diffusion pipeline classes.
+    - Methods:
+        - `__call__`: Executes the transformation from one image to another, following a diffusion-based approach.
+
+6. **ORTPipelineForText2Image**:
+    - A pipeline specifically designed for generating images from text prompts using ONNX Runtime.
+    - Attributes:
+        - Inherits attributes from the base pipeline classes.
+    - Methods:
+        - `__call__`: Generates an image from a given text prompt using a diffusion model.
+
+7. **ORTPipelineForInpainting**:
+    - A more specialized pipeline for image inpainting tasks.
+    - Attributes:
+        - Inherits from the base pipeline classes.
+    - Methods:
+        - `__call__`: Handles the inpainting task, similar to `ORTStableDiffusionInpaintPipeline`, but can be more flexible for custom diffusion processes.
+
+These classes provide flexible pipelines for handling various diffusion-based tasks such as image generation, inpainting, 
+and image-to-image translation, leveraging ONNX Runtime for optimized inference.
+"""
+
 
 import importlib
 import inspect

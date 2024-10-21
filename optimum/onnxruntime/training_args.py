@@ -1,16 +1,50 @@
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+The `ORTTrainingArguments` class extends `TrainingArguments` from 🤗 Transformers and introduces additional arguments 
+for training models with ONNX Runtime optimizations. This class is designed to facilitate efficient model training 
+while leveraging ONNX Runtime’s optimized features, such as fused optimizers and reduced memory usage.
+
+Main Features:
+--------------
+- **ONNX Runtime Optimizations**: Provides support for optimizers implemented in ONNX Runtime (e.g., `adamw_ort_fused`), 
+  allowing for more efficient training compared to standard PyTorch optimizers.
+- **Module With Loss Support**: Optionally wraps the model with a `ModuleWithLoss` wrapper, enabling the loss 
+  computation to happen inside the training loop, which can help reduce peak memory usage.
+- **Saving ONNX Models**: Allows users to save the ONNX models during training by setting the `save_onnx` argument 
+  to `True`, with options to customize the saved model’s file prefix and log level.
+
+Attributes:
+-----------
+- **optim** (`str` or `ORTOptimizerNames` or `OptimizerNames`, optional, defaults to `"adamw_hf"`):
+    Specifies the optimizer to use for training. This includes both 🤗 Transformers optimizers (e.g., `adamw_hf`, 
+    `adafactor`) and ONNX Runtime optimizers (e.g., `adamw_ort_fused`).
+- **use_module_with_loss** (`bool`, optional, defaults to `False`):
+    Enables wrapping the model with a `ModuleWithLoss` to compute the loss inside the training loop, saving memory 
+    during training.
+- **save_onnx** (`bool`, optional, defaults to `False`):
+    Configures whether to save the ONNX models during training. When set to `True`, the models are saved in the 
+    output directory, with an optional file prefix.
+- **onnx_prefix** (`str`, optional):
+    Specifies the file prefix for saved ONNX models. Required if `save_onnx` is set to `True`.
+- **onnx_log_level** (`str`, optional, defaults to `"WARNING"`):
+    Specifies the log level for ONNX Runtime during model saving, with options like `VERBOSE`, `INFO`, `WARNING`, 
+    `ERROR`, and `FATAL`.
+
+Usage Example:
+--------------
+```python
+from optimum.onnxruntime import ORTTrainingArguments
+
+# Define ONNX Runtime-specific training arguments
+training_args = ORTTrainingArguments(
+    output_dir="./results",
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=16,
+    num_train_epochs=3,
+    optim="adamw_ort_fused",
+    save_onnx=True,
+    onnx_prefix="my_model"
+)
+"""
 
 import io
 import json

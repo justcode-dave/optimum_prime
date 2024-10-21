@@ -1,16 +1,38 @@
-# Copyright 2020 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+The `ORTSeq2SeqTrainingArguments` class extends both `Seq2SeqTrainingArguments` from 🤗 Transformers and 
+`ORTTrainingArguments` to provide a set of arguments specific to training sequence-to-sequence models 
+with ONNX Runtime optimizations.
+
+Main Features:
+--------------
+- **Sequence-to-Sequence Training**: Inherits all relevant arguments for sequence-to-sequence model training from 
+  `Seq2SeqTrainingArguments`, such as arguments related to beam search, maximum generation length, and evaluation 
+  metrics.
+- **ONNX Runtime Integration**: Adds support for using ONNX Runtime’s optimizers and training methods through 
+  `ORTTrainingArguments`, enabling faster training and improved resource utilization, particularly for large models.
+- **Custom Optimizers**: Allows the selection of optimizers from both Transformers (e.g., `adamw_hf`, `adafactor`) 
+  and ONNX Runtime (e.g., `adamw_ort_fused`).
+
+Attributes:
+-----------
+- **optim** (`str` or `ORTOptimizerNames` or `OptimizerNames`, optional, defaults to `"adamw_hf"`):
+    The optimizer to use for training. This can include optimizers provided by 🤗 Transformers (e.g., `adamw_hf`, 
+    `adafactor`) or those implemented by ONNX Runtime (e.g., `adamw_ort_fused`).
+
+Usage Example:
+--------------
+```python
+from optimum.onnxruntime import ORTSeq2SeqTrainingArguments
+
+# Define training arguments
+training_args = ORTSeq2SeqTrainingArguments(
+    output_dir="./results",
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=16,
+    num_train_epochs=3,
+    optim="adamw_ort_fused",
+)
+"""
 
 from dataclasses import dataclass, field
 from typing import Optional

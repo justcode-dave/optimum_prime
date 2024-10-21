@@ -1,16 +1,36 @@
-#  Copyright 2021 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+"""
+This module initializes the ONNX Runtime (ORT) extension for the Hugging Face Transformers library. 
+It provides lazy imports for key components and configurations required for model optimization, 
+quantization, and export functionalities using ONNX and ONNX Runtime.
+
+The main components included are:
+- Configuration utilities for calibration, quantization, and optimization (`ORTConfig`, `QuantizationConfig`, etc.).
+- ONNX Runtime (ORT) model classes for various tasks, such as sequence classification, token classification, image 
+  classification, and others, across tasks like NLP, Vision, and Speech (`ORTModel`, `ORTModelForSequenceClassification`, 
+  etc.).
+- Diffusion model pipelines for Stable Diffusion and similar models if the `diffusers` library is available.
+- Optimization and quantization utilities (`ORTOptimizer`, `ORTQuantizer`) for model compression and performance 
+  improvements.
+- Training utilities including arguments, trainers, and helpers for integrating ONNX Runtime with the Hugging Face 
+  training loops (`ORTTrainer`, `ORTTrainingArguments`).
+
+The module uses lazy imports to optimize loading times, only loading components when they are specifically requested. 
+It also handles optional dependencies like `diffusers` by providing alternatives if the dependency is unavailable.
+
+Note:
+    If `diffusers` is not available, dummy objects are imported to maintain compatibility with codebases that don't 
+    require Stable Diffusion pipelines.
+
+Available Components:
+----------------------
+- Configuration: Handles various configuration needs, including calibration, quantization, and optimization.
+- Modeling: ORT model classes for tasks in NLP, Vision, and Speech.
+- Optimization: Tools for optimizing models for deployment.
+- Quantization: Tools for quantizing models for performance improvements.
+- Training: Classes and arguments for training models with ONNX Runtime integration.
+- Diffusion Pipelines: ORT-based pipelines for Stable Diffusion and other diffusion models (if `diffusers` is available).
+"""
+
 from typing import TYPE_CHECKING
 
 from transformers.utils import OptionalDependencyNotAvailable, _LazyModule

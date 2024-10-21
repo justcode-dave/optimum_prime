@@ -1,18 +1,63 @@
-#  Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
 """
-The ORTTrainer class, to easily train a 🤗 Transformers from scratch or finetune it on a new task with ONNX Runtime.
+The `ORTTrainer` class is a feature-complete trainer designed for training 🤗 Transformers models with ONNX Runtime.
+It extends the Hugging Face `Trainer` class and adds support for leveraging ONNX Runtime’s optimizations during 
+training, enabling faster and more efficient model training and inference, particularly on large models.
+
+Main Features:
+--------------
+- **Training**: Supports training and fine-tuning models using ONNX Runtime, with optimizations for mixed precision 
+  and distributed training. It integrates seamlessly with 🤗 Transformers models and tokenizers.
+- **Compatibility**: Works with various training backends, including PyTorch, DeepSpeed, FSDP (Fully Sharded Data 
+  Parallel), and ONNX Runtime’s own optimizers.
+- **Loss Computation**: Adds a specialized `ModuleWithLoss` wrapper to optimize memory usage during training by 
+  computing the loss internally.
+- **Evaluation and Prediction**: Provides tools for model evaluation and generating predictions using the trained models.
+- **Accelerator Integration**: Leverages Hugging Face's `accelerate` library for handling distributed and mixed 
+  precision training across multiple devices.
+
+Classes:
+--------
+1. **ORTTrainer**:
+    - A subclass of `Trainer` that extends the functionality to support ONNX Runtime for efficient training.
+    - Supports various arguments for model training, including the use of custom optimizers, schedulers, and callbacks.
+    - Methods:
+        - `train`: The main training loop, handling model optimization, checkpointing, and distributed training.
+        - `evaluate`: Evaluate the model on a given dataset.
+        - `predict`: Generate predictions using the trained model.
+        - `compute_loss`: Custom loss computation method to optimize memory usage.
+        - `create_optimizer`: Creates the appropriate optimizer for training, with support for ONNX Runtime's 
+          optimizers like FusedAdam.
+        - `get_ort_optimizer_cls_and_kwargs`: A utility method to fetch ONNX Runtime’s optimizer classes and arguments.
+
+Usage Examples:
+---------------
+### Fine-Tuning a Pretrained Model:
+```python
+from optimum.onnxruntime import ORTTrainer
+from transformers import ORTTrainingArguments
+
+# Define training arguments
+training_args = ORTTrainingArguments(
+    output_dir="./results",
+    evaluation_strategy="epoch",
+    learning_rate=2e-5,
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=16,
+    num_train_epochs=3,
+    use_module_with_loss=True,
+)
+
+# Initialize ORTTrainer
+trainer = ORTTrainer(
+    model=onnx_model,
+    args=training_args,
+    train_dataset=train_dataset,
+    eval_dataset=eval_dataset,
+    tokenizer=tokenizer,
+)
+
+# Train the model
+trainer.train()
 """
 import functools
 import math

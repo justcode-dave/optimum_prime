@@ -1,17 +1,63 @@
-#  Copyright 2021 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-"""Classes handling quantization with ONNX Runtime."""
+"""
+This module provides classes and methods for performing quantization with ONNX Runtime. It focuses on 
+post-training quantization of HuggingFace models, including calibration, computation of quantization ranges, 
+and dynamic/static quantization. The primary class, `ORTQuantizer`, facilitates the quantization of ONNX 
+models to improve inference efficiency.
+
+Main Features:
+--------------
+- **Quantization Methods**: Supports both dynamic and static quantization, allowing models to run with 
+  reduced precision (e.g., int8) for faster inference without significant accuracy loss.
+- **Calibration Process**: Implements calibration using user-provided datasets, which is necessary for 
+  static quantization to compute quantization ranges.
+- **Model Conversion**: Provides methods to convert ONNX models into quantized formats while handling 
+  external data formats and large model sizes.
+- **Support for Various Operators**: Allows fine-tuning of the quantization process by specifying 
+  which operators to quantize and whether to use symmetric ranges.
+
+Classes:
+--------
+1. **ORTQuantizer**:
+    - Main class responsible for quantizing ONNX models.
+    - Attributes:
+        - `onnx_model_path`: Path to the ONNX model file to be quantized.
+        - `config`: The HuggingFace configuration associated with the model, if available.
+    - Methods:
+        - `from_pretrained`: Loads an ONNX model from a file or ORT model instance for quantization.
+        - `fit`: Performs calibration and computes quantization ranges using a dataset.
+        - `partial_fit`: Collects calibration data without computing ranges.
+        - `compute_ranges`: Finalizes the calibration step by computing quantization ranges.
+        - `quantize`: Applies quantization based on the computed ranges or dynamic quantization configurations.
+        - `get_calibration_dataset`: Prepares a dataset for static quantization calibration.
+
+2. **ORTCalibrationDataReader**:
+    - Reads calibration data in batches to feed into the quantizer during static quantization.
+    - Supports iterating over datasets with a customizable batch size.
+
+Usage Examples:
+---------------
+### Performing Static Quantization with Calibration:
+```python
+from optimum.onnxruntime import ORTQuantizer
+from optimum.onnxruntime.configuration import CalibrationConfig, QuantizationConfig
+from datasets import load_dataset
+
+# Load the ONNX model
+quantizer = ORTQuantizer.from_pretrained("path/to/onnx/model")
+
+# Define the calibration and quantization configurations
+calibration_config = CalibrationConfig(method="MinMax")
+quantization_config = QuantizationConfig(is_static=True)
+
+# Load calibration dataset
+dataset = load_dataset("my_dataset", split="train")
+
+# Perform the calibration step to compute quantization ranges
+quantizer.fit(dataset, calibration_config)
+
+# Apply quantization to the model
+quantized_model_path = quantizer.quantize(quantization_config, save_dir="path/to/save/quantized_model")
+"""
 
 import logging
 import os

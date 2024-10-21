@@ -1,17 +1,24 @@
-#  Copyright 2021 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-"""Utility functions, classes and constants for ONNX Runtime."""
+"""
+Utility functions, classes, and constants for ONNX Runtime integration with 🤗 Transformers.
+
+This module provides various utilities to assist with working in ONNX Runtime (ORT), including:
+- Checking the availability of ORT features (e.g., GPU support, training support).
+- Device and execution provider handling for ONNX models.
+- Functions to assist in saving and optimizing ONNX models.
+- Quantization support for specific ONNX operators.
+- Functions to manage ONNX Runtime configurations for supported model types.
+- Evaluation loop functions for running inference and computing metrics with ONNX Runtime models.
+
+Main Components:
+-----------------
+- **ORTConfigManager**: A class for managing the mapping between supported model types and their corresponding ORT configurations.
+- **ORTQuantizableOperator**: An Enum class representing operators that can be quantized in ONNX models.
+- **evaluation_loop**: A function to run evaluation on an ONNX model using ONNX Runtime, compatible with 🤗 Transformers-style evaluation.
+- **IO Binding Utilities**: Functions for configuring input/output bindings when working with ONNX Runtime, especially when using GPUs.
+
+This module is essential for enabling optimized model execution using ONNX Runtime, especially when used in conjunction 
+with 🤗 Transformers models.
+"""
 
 import importlib
 import os

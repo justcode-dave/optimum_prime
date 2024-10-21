@@ -1,17 +1,60 @@
-#  Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-"""Classes handling causal-lm related architectures in ONNX Runtime."""
+"""
+This module provides classes for handling causal language model (causal-lm) architectures in ONNX Runtime, specifically 
+for text generation tasks. These classes are designed to support ONNX Runtime inference for causal language models such as 
+Bloom, GPT, Falcon, and others, with integration for generation and caching mechanisms.
+
+Classes:
+
+1. **ORTModelForCausalLM**:
+    - Base class for ONNX Runtime inference of causal language models with a causal language modeling head.
+    - Attributes:
+        - `auto_model_class (AutoModelForCausalLM)`: Maps to the corresponding `AutoModelForCausalLM` class from Transformers.
+        - `main_input_name (str)`: Name of the main input (usually "input_ids").
+        - `use_cache (bool)`: Indicates whether past key-value caching is enabled.
+        - `generation_config (GenerationConfig)`: Configuration for text generation.
+        - `use_fp16 (bool)`: Indicates whether the model uses float16 precision.
+    - Methods:
+        - `__init__`: Initializes the ONNX Runtime model, handles I/O binding, caching, and configuration setup.
+        - `forward`: Performs the forward pass of the model, generating predictions and handling past key-values.
+        - `prepare_past_key_values`: Prepares and returns past key values for the model's decoder.
+        - `prepare_inputs_for_generation`: Prepares the inputs for text generation, adjusting the input IDs and handling past key values.
+        - `_reorder_cache`: Reorders the past key-values cache to align with the current beam indices during beam search.
+
+2. **ORTGPTBigCodeForCausalLM**:
+    - A subclass of `ORTModelForCausalLM`, adapted specifically for the GPT BigCode model.
+    - Methods:
+        - `prepare_inputs_for_generation`: Prepares inputs for generation with support for GPT BigCode's unique caching mechanism.
+        - `_reorder_cache`: Reorders past key values for beam search.
+
+3. **ORTBloomForCausalLM**:
+    - A subclass of `ORTModelForCausalLM`, adapted specifically for the Bloom model.
+    - Methods:
+        - `prepare_inputs_for_generation`: Prepares inputs for generation, handling Bloom's specific past key-value structure.
+        - `_reorder_cache`: Reorders past key values in Bloom's cache format during beam search.
+
+4. **ORTOPTForCausalLM**:
+    - A subclass of `ORTModelForCausalLM`, adapted specifically for the OPT (Open Pre-trained Transformer) model.
+    - Methods:
+        - `prepare_inputs_for_generation`: Prepares inputs for generation, handling input IDs and caching for OPT.
+
+5. **ORTMPTForCausalLM**:
+    - A subclass of `ORTModelForCausalLM`, adapted for the MPT (MosaicML Pre-trained Transformer) model.
+    - Methods:
+        - `prepare_inputs_for_generation`: Prepares inputs for generation for MPT, handling input IDs and caching.
+
+6. **ORTFalconForCausalLM**:
+    - A subclass of `ORTModelForCausalLM`, adapted for the Falcon model, which includes specific handling for key-value heads and caching.
+    - Attributes:
+        - `num_key_value_heads (int)`: Number of key-value heads used in the Falcon model.
+        - `use_alibi (bool)`: Indicates whether the model uses Alibi positional encoding.
+    - Methods:
+        - `prepare_inputs_for_generation`: Prepares inputs for generation for the Falcon model.
+        - `_reorder_cache`: Reorders past key values during beam search for the Falcon model.
+
+These classes are designed to provide an efficient inference process for causal language models in ONNX Runtime, 
+handling input preparation, caching, and text generation for various model architectures.
+"""
+
 
 import logging
 from pathlib import Path

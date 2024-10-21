@@ -1,17 +1,27 @@
-#  Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-"""Defines the base classes that are used to perform inference with ONNX Runtime of Transformers models."""
+"""
+This module defines the base classes used for performing inference with Transformer models using ONNX Runtime.
+
+The core components provided in this file are:
+- `ORTModelPart`: Represents a part of a multi-file ONNX model, such as an encoder or decoder in an encoder-decoder model. 
+  It encapsulates its own `onnxruntime.InferenceSession` and manages the forward pass.
+- `ORTEncoder`: Inherits from `ORTModelPart`, representing the encoder part of an encoder-decoder model. 
+  This class handles inference of the encoder model using ONNX Runtime, including input/output binding, and preparing the outputs.
+- `ORTDecoderForSeq2Seq`: Inherits from `ORTModelPart`, representing the decoder model with a language modeling head for seq2seq models.
+  This class handles the decoder inference, caching mechanism, and past key values (attention key and value pairs), 
+  as well as dealing with merged models where the decoder supports both with and without past key values branches.
+
+The key functionalities include:
+- Efficient use of IO binding when running inference on GPUs with ONNX Runtime to reduce the overhead of moving tensors 
+  between the device and the CPU.
+- Support for past key values (used for transformer models with caching) to speed up the decoding of large sequences.
+- Abstract methods like `forward()` which are implemented by the encoder and decoder to run the ONNX model for inference.
+- Utility methods for preparing inputs and outputs for the ONNX model, handling the intricacies of passing past key values, 
+  handling attention masks, and ensuring the correct data flow.
+
+This module also integrates with the `ORTModel` for managing overall model structure and inference, and interacts with 
+ONNX Runtime's inference sessions for executing the model's forward passes efficiently.
+"""
+
 
 from abc import abstractmethod
 from typing import Dict, Optional, Set, Tuple, Union

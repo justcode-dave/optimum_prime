@@ -1,16 +1,35 @@
-#  Copyright 2021 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+"""
+This module provides a temporary class `ORTModel` for performing evaluation on ONNX models using ONNX Runtime (ORT). 
+It allows loading an ONNX model, running inference on a dataset, and computing evaluation metrics. 
+The class is marked for deprecation and will be replaced in future releases.
+
+Classes:
+
+1. **ORTModel**:
+    - A temporary class to evaluate ONNX models using ONNX Runtime.
+    - Attributes:
+        - `compute_metrics (Optional[Callable[[EvalPrediction], Dict]])`: Function to compute evaluation metrics.
+        - `label_names (List[str])`: Names of the labels in the dataset.
+        - `session (InferenceSession)`: The ONNX Runtime session for running model inference.
+        - `onnx_input_names (Dict[str, int])`: A dictionary mapping input names to their index in the ONNX model.
+    - Methods:
+        - `__init__(self, model_path: Union[str, os.PathLike], execution_provider: Optional[str] = "CPUExecutionProvider", compute_metrics: Optional[Callable[[EvalPrediction], Dict]] = None, label_names: Optional[List[str]] = None)`:
+            - Initializes the ORT model, loads the ONNX model, and sets up the evaluation configuration.
+            - Parameters:
+                - `model_path (Union[str, os.PathLike])`: Path to the ONNX model file.
+                - `execution_provider (Optional[str])`: ONNX Runtime execution provider, defaults to "CPUExecutionProvider".
+                - `compute_metrics (Optional[Callable[[EvalPrediction], Dict]])`: Function to compute evaluation metrics, optional.
+                - `label_names (Optional[List[str]])`: List of label names, defaults to `["labels"]`.
+        - `evaluation_loop(self, dataset: Dataset)`:
+            - Runs the evaluation loop on the provided dataset, generating predictions and computing metrics.
+            - Parameters:
+                - `dataset (Dataset)`: The dataset to evaluate.
+            - Returns:
+                - An `EvalLoopOutput` containing predictions, label IDs, metrics, and the number of samples evaluated.
+
+This class will be removed in future versions and replaced with a more robust ONNX model evaluation system.
+"""
+
 
 import logging
 import os

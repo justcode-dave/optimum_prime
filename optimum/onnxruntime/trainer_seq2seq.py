@@ -1,18 +1,61 @@
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """
-The ORTSeq2SeqTrainer class, to easily train a sequence to sequence model in 🤗 Transformers from scratch or finetune it on a new task with ONNX Runtime.
+This module provides the `ORTSeq2SeqTrainer` class, which is designed to facilitate the training, evaluation, 
+and prediction of sequence-to-sequence (Seq2Seq) models using ONNX Runtime. It is a specialized version of the 
+Hugging Face `ORTTrainer`, and it is optimized for ONNX Runtime to enable faster training and inference.
+
+Main Features:
+--------------
+- **Training**: Supports fine-tuning pre-trained Seq2Seq models or training from scratch using ONNX Runtime.
+- **Evaluation**: Provides methods to evaluate Seq2Seq models and compute task-specific metrics, with support 
+  for tasks such as text generation and translation.
+- **Prediction**: Generates predictions using beam search and other generation strategies, with built-in 
+  functionality for processing dynamic sequence lengths.
+- **Compatibility**: Extends Hugging Face’s `Trainer` framework and leverages the `accelerate` library for 
+  distributed training and inference.
+
+Classes:
+--------
+1. **ORTSeq2SeqTrainer**:
+    - A subclass of `ORTTrainer` specifically designed for Seq2Seq tasks using ONNX Runtime.
+    - Methods:
+        - `evaluate`: Evaluates the model on a given dataset and returns metrics.
+        - `predict`: Runs inference on a test dataset, returning predictions and optionally computing metrics.
+        - `prediction_step`: Executes a single evaluation step on the model using the provided inputs and 
+          generates predictions.
+        - `_pad_tensors_to_max_len`: Pads tensors to a specified maximum length using the model’s pad token.
+
+Usage Examples:
+---------------
+### Fine-Tuning a Seq2Seq Model:
+```python
+from optimum.onnxruntime import ORTSeq2SeqTrainer
+from transformers import Seq2SeqTrainingArguments
+
+# Define training arguments
+training_args = Seq2SeqTrainingArguments(
+    output_dir="./results",
+    evaluation_strategy="epoch",
+    learning_rate=2e-5,
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=16,
+    weight_decay=0.01,
+    save_total_limit=3,
+    num_train_epochs=3,
+    predict_with_generate=True,
+)
+
+# Initialize ORTSeq2SeqTrainer
+trainer = ORTSeq2SeqTrainer(
+    model=onnx_model,
+    args=training_args,
+    train_dataset=train_dataset,
+    eval_dataset=eval_dataset,
+    tokenizer=tokenizer,
+)
+
+# Train and evaluate the model
+trainer.train()
+trainer.evaluate()
 """
 from typing import Any, Dict, List, Optional, Tuple, Union
 

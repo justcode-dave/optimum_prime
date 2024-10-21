@@ -1,17 +1,74 @@
-#  Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-"""ORTModelForXXX classes, allowing to run ONNX Models with ONNX Runtime using the same API as Transformers."""
+"""
+============================
+ONNX Runtime Model Integration
+============================
+
+This module provides classes for running Hugging Face Transformer models using ONNX Runtime (ORT). It focuses on 
+optimizing inference speed and resource usage without modifying the user-facing API.
+
+The key functionality offered by this module includes:
+- Efficient inference for transformer models using ONNX Runtime (ORT).
+- Seamless model loading and execution using ONNX with support for various hardware providers (e.g., CPU, GPU, etc.).
+- Compatibility with the Hugging Face `transformers` library, enabling users to leverage the same API for ONNX models.
+- Optional use of IO binding to further accelerate inference by minimizing memory copy overhead between device and host.
+- Dynamic input and output preparation for ONNX models across different tasks (e.g., token classification, question answering, etc.).
+
+Supported Model Types
+======================
+This module supports a wide variety of transformer-based models for different tasks, including:
+- Text-related tasks: Sequence classification, token classification, causal language modeling, etc.
+- Vision-related tasks: Image classification, semantic segmentation, super-resolution.
+- Audio-related tasks: Speech recognition, audio classification, and audio feature extraction.
+- Custom tasks: Allows loading custom ONNX models for custom tasks.
+
+Classes Overview
+================
+The following classes are the main components of this module:
+- **ORTModel**: The base class that provides the necessary methods to load, run, and manage ONNX models. 
+  It handles various providers for ONNX execution (CPUExecutionProvider, CUDAExecutionProvider, etc.) 
+  and can optimize I/O using binding mechanisms for better performance on GPU devices.
+  
+- **ORTModelForFeatureExtraction**: This class provides an optimized inference pipeline for feature extraction tasks
+  and supports models from the Hugging Face Transformers library.
+
+- **ORTModelForMaskedLM**: A specialized class for models with a masked language modeling (MLM) head, used for tasks 
+  like fill-mask prediction (e.g., BERT, RoBERTa).
+  
+- **ORTModelForSequenceClassification**: A class that adds a classification head to the transformer models for 
+  sequence-level tasks such as sentiment analysis (e.g., BERT, DistilBERT).
+  
+- **ORTModelForTokenClassification**: Designed for models that perform token-level tasks like named entity recognition (NER).
+  
+- **ORTModelForImageClassification**: Optimized for image classification tasks with ONNX models (e.g., Vision Transformers, ResNet).
+  
+- **ORTModelForSemanticSegmentation**: A class handling semantic segmentation tasks with ONNX models, outputting pixel-wise 
+  classifications (e.g., SegFormer).
+  
+- **ORTModelForAudioClassification**: Supports audio models optimized for classifying audio inputs (e.g., Wav2Vec2, HuBERT).
+
+Usage Example
+=============
+Here is an example of how to use this module for inference:
+
+```python
+from optimum.onnxruntime import ORTModelForSequenceClassification
+from transformers import AutoTokenizer
+
+# Load the model and tokenizer
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+model = ORTModelForSequenceClassification.from_pretrained("optimum/bert-base-uncased-finetuned-sst-2-english")
+
+# Prepare inputs
+inputs = tokenizer("Hello, this is a test!", return_tensors="pt")
+
+# Perform inference
+outputs = model(**inputs)
+logits = outputs.logits
+
+# Get the predicted label
+predicted_label = logits.argmax(-1).item()
+
+"""
 
 import logging
 import re

@@ -1,17 +1,50 @@
-#  Copyright 2021 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-"""Configuration classes for graph optimization and quantization with ONNX Runtime."""
+"""
+This module provides configuration classes for handling various aspects of ONNX Runtime (ORT), including graph optimization, 
+quantization, and calibration. These configurations enable advanced performance tuning and model optimization 
+during the export and inference processes using ONNX Runtime.
+
+The key classes in this module include:
+
+1. **CalibrationConfig**:
+    - Defines the configuration for the calibration step used in static quantization.
+    - Manages parameters such as calibration dataset, method (e.g., MinMax, Percentile), and various tuning options 
+      (e.g., number of bins, moving average).
+
+2. **QuantizationConfig**:
+    - Configures ONNX Runtime quantization settings for both static and dynamic quantization.
+    - Handles the format, mode, data types, per-channel quantization, and specific nodes or operators to quantize or exclude.
+    - Supports advanced options like QDQ (Quantize-Dequantize) pairs and reduced range quantization.
+
+3. **OptimizationConfig**:
+    - Manages various optimizations available in ONNX Runtime, including general-purpose and transformer-specific optimizations.
+    - Includes options for setting optimization levels, enabling FP16 conversion, GELU approximation, attention mask optimizations, 
+      and GPU-specific optimizations.
+
+4. **AutoCalibrationConfig**:
+    - Factory class that provides pre-configured `CalibrationConfig` setups for various calibration methods, 
+      such as MinMax, Entropy, and Percentile. This simplifies the setup process for users.
+
+5. **AutoQuantizationConfig**:
+    - Provides factory methods for creating `QuantizationConfig` objects tailored for different hardware architectures 
+      (e.g., ARM64, AVX2, TensorRT).
+    - Helps users quickly set up quantization configurations with appropriate settings for their hardware.
+
+6. **AutoOptimizationConfig**:
+    - Factory class to generate `OptimizationConfig` based on predefined optimization levels (O1, O2, O3, O4), 
+      which specify different levels of model optimization.
+    - These levels define the optimization techniques applied, such as general graph optimizations, transformer-specific fusions, 
+      FP16 conversion, and GELU approximation.
+
+7. **ORTConfig**:
+    - Central configuration class that consolidates the settings for exporting a model to ONNX Runtime, optimizing it, 
+      and applying quantization.
+    - This configuration includes ONNX opset version, external data handling for large models, and the ability to include 
+      specific optimization and quantization settings.
+
+This module serves as the backbone for configuring and fine-tuning models for export, calibration, optimization, 
+and quantization in ONNX Runtime, ensuring efficient inference performance across a range of hardware platforms.
+"""
+
 
 import os
 import warnings

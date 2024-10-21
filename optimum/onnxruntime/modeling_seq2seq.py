@@ -1,19 +1,69 @@
-#  Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
 """
-ORTModelForXXX classes related to seq2seq, allowing to run ONNX Models with ONNX Runtime using the same API as
-Transformers.
+This module provides the `ORTModelForSeq2SeqLM` and related classes, which facilitate running ONNX Runtime models 
+for various sequence-to-sequence tasks like translation, text generation, speech-to-text, and more. These models 
+offer HuggingFace Transformers-compatible APIs for easy integration with pre-trained models.
+
+Main Features:
+--------------
+- ONNX Runtime Inference: Utilize ONNX Runtime for optimized inference on sequence-to-sequence models.
+- Multi-Task Support: Supports tasks such as text generation, translation, speech-to-text, and vision-to-text, 
+  including speech and image encoding.
+- I/O Binding: Enables optimized execution by leveraging I/O binding on CUDAExecutionProvider, reducing memory transfers.
+
+Classes:
+--------
+1. **ORTModelForConditionalGeneration**:
+    - A base class for sequence-to-sequence models using ONNX Runtime, supporting caching mechanisms for decoder 
+      past key/values to speed up inference.
+    - Attributes:
+        - `encoder`: The encoder part of the model (e.g., BART, T5).
+        - `decoder`: The decoder part for generating outputs.
+        - `use_cache`: Whether or not to cache past key/values for faster decoding.
+        - `generation_config`: Configuration used for text generation (e.g., beam search, sampling).
+    - Methods:
+        - `from_pretrained`: Load an ONNX model from pre-trained checkpoints.
+        - `forward`: Runs the model forward pass, handling encoder and decoder logic for sequence-to-sequence tasks.
+        - `to`: Moves the model to a specified device (CPU, GPU).
+
+2. **ORTModelForSeq2SeqLM**:
+    - A specialized subclass of `ORTModelForConditionalGeneration` for text generation tasks, like translation 
+      and summarization. Supports models like T5, Marian, mBART, and Pegasus.
+    - Methods:
+        - `forward`: Executes the forward pass for text generation tasks.
+        - `prepare_inputs_for_generation`: Prepares inputs for the generation loop (used in beam search and other 
+          generation methods).
+
+3. **ORTModelForSpeechSeq2Seq**:
+    - Handles speech-to-text tasks using models like Whisper and Speech-to-Text (STT) transformers.
+    - Methods:
+        - `forward`: Executes a forward pass for speech-based models, taking mel spectrogram features as input.
+        - `prepare_inputs_for_generation`: Prepares inputs specifically for speech-to-text generation tasks.
+
+4. **ORTModelForVision2Seq**:
+    - Used for vision-to-text models, including image captioning and scene understanding tasks.
+    - Methods:
+        - `forward`: Encodes images and decodes them into text.
+        - `prepare_inputs_for_generation`: Prepares inputs for generation when working with vision-based models.
+  
+5. **ORTModelForPix2Struct**:
+    - Handles tasks where structured output is generated from images, such as diagrams or visual data.
+    - Methods:
+        - `forward`: Encodes visual input (like flattened patches) and decodes it into structured text.
+        - `prepare_inputs_for_generation`: Prepares inputs for structured output generation.
+
+Usage Examples:
+---------------
+### Text Translation Example:
+```python
+from transformers import AutoTokenizer
+from optimum.onnxruntime import ORTModelForSeq2SeqLM
+
+tokenizer = AutoTokenizer.from_pretrained("optimum/t5-small")
+model = ORTModelForSeq2SeqLM.from_pretrained("optimum/t5-small")
+
+inputs = tokenizer("Translate English to German: The house is beautiful.", return_tensors="pt")
+outputs = model.generate(**inputs)
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))
 """
 
 import logging

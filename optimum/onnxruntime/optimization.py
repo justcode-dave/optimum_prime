@@ -1,17 +1,51 @@
-#  Copyright 2021 The HuggingFace Team. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-"""Main class for performing graph optimization with ONNX Runtime."""
+"""
+This module provides functionality for optimizing ONNX models using ONNX Runtime, with a focus on models from 
+the HuggingFace Transformers library. It defines the `ORTOptimizer` class, which enables efficient graph 
+optimization for models like BERT, GPT, and Seq2Seq models, while offering support for external data formats 
+and GPU optimization.
+
+Main Features:
+--------------
+- **Model Optimization**: Handles optimization of ONNX models by leveraging ONNX Runtime's built-in optimizers 
+  and applying specific transformer-based optimizations.
+- **External Data Handling**: Supports models larger than 2GB by managing external data files during optimization.
+- **Fused Operators**: Provides methods to check and report on the optimization status, including counting 
+  the number of fused operators and computing node differences between the original and optimized models.
+- **GPU Optimization**: Supports optimizing models for GPU execution by enabling specific configurations and 
+  utilizing float16 precision.
+
+Classes:
+--------
+1. **ORTOptimizer**:
+    - The core class responsible for optimizing ONNX models, including graph transformations, node fusion, and 
+      precision conversion (e.g., to float16).
+    - Attributes:
+        - `onnx_model_path`: The path to the ONNX model files.
+        - `config`: The model configuration, which provides model details like hidden size and attention heads.
+        - `from_ortmodel`: Indicates if the model is already loaded in ORT format or from disk.
+    - Methods:
+        - `from_pretrained`: Loads a pre-trained model or ONNX file and initializes the optimizer.
+        - `optimize`: Applies the optimizations defined in the `OptimizationConfig` and saves the optimized model.
+        - `get_fused_operators`: Retrieves a count of the operators that were fused during optimization.
+        - `get_nodes_number_difference`: Compares the number of nodes before and after optimization.
+        - `get_operators_difference`: Compares the count of different operator types before and after optimization.
+
+Usage Examples:
+---------------
+### Optimizing a Pre-trained ONNX Model:
+```python
+from optimum.onnxruntime import ORTOptimizer
+from optimum.onnxruntime.optimization import OptimizationConfig
+
+# Define optimization config
+opt_config = OptimizationConfig(optimization_level=2, optimize_for_gpu=True, fp16=True)
+
+# Load the optimizer
+optimizer = ORTOptimizer.from_pretrained("path/to/onnx/model")
+
+# Optimize the model and save it to the specified directory
+optimizer.optimize(optimization_config=opt_config, save_dir="path/to/save/optimized/model")
+"""
 
 import gc
 import os
